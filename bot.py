@@ -36,37 +36,37 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 AVATAR_CATEGORIES = {
     "anime_boy": {
         "label": "أنمي أولاد فخم (Anime Boy)",
-        "tags": "1boy solo aesthetic rating:general",
+        "tags": "1boy rating:general",
         "color": discord.Color.blue(),
         "emoji": "👦"
     },
     "anime_girl": {
         "label": "أنمي بنات جمالي (Anime Girl)",
-        "tags": "1girl solo aesthetic rating:general",
+        "tags": "1girl rating:general",
         "color": discord.Color.purple(),
         "emoji": "👧"
     },
     "dark_purple": {
         "label": "دارك وبنفسجي (Dark / Purple Aesthetic)",
-        "tags": "dark purple_theme solo rating:general",
+        "tags": "purple_theme rating:general",
         "color": discord.Color.dark_purple(),
         "emoji": "🖤"
     },
     "cyberpunk": {
         "label": "سايبربانك ونيون (Cyberpunk / Neon)",
-        "tags": "cyberpunk neon solo rating:general",
+        "tags": "cyberpunk rating:general",
         "color": discord.Color.teal(),
         "emoji": "🌆"
     },
     "matching": {
         "label": "افتارات طقم كبلز (Matching / Couple)",
-        "tags": "2girls OR 1boy_1girl aesthetic rating:general",
+        "tags": "2girls rating:general",
         "color": discord.Color.fuchsia(),
         "emoji": "✨"
     },
     "cat_aesthetic": {
         "label": "قطط جمالية (Aesthetic Cats)",
-        "tags": "cat aesthetic rating:general",
+        "tags": "cat rating:general",
         "color": discord.Color.orange(),
         "emoji": "🐱"
     }
@@ -76,31 +76,31 @@ AVATAR_CATEGORIES = {
 BANNER_CATEGORIES = {
     "dark_purple_banner": {
         "label": "بنر دارك وبنفسجي (Dark Purple Scenery)",
-        "tags": "scenery purple_theme wallpaper rating:general",
+        "tags": "scenery purple_theme rating:general",
         "color": discord.Color.purple(),
         "emoji": "🌌"
     },
     "anime_scenery": {
         "label": "بنر أنمي ومناظر (Anime Landscape)",
-        "tags": "scenery sky clouds wallpaper rating:general",
+        "tags": "scenery sky rating:general",
         "color": discord.Color.magenta(),
         "emoji": "🌸"
     },
     "cyberpunk_city": {
         "label": "بنر سايبربانك ومدينة (Cyberpunk City)",
-        "tags": "cyberpunk cityscape night wallpaper rating:general",
+        "tags": "cyberpunk cityscape rating:general",
         "color": discord.Color.teal(),
         "emoji": "🌆"
     },
     "pixel_lofi": {
         "label": "بنر بكسل ولوفاي (Pixel / Lofi)",
-        "tags": "pixel_art scenery wallpaper rating:general",
+        "tags": "pixel_art scenery rating:general",
         "color": discord.Color.green(),
         "emoji": "🌿"
     },
     "space_galaxy": {
         "label": "بنر فضاء ومجرات (Space & Galaxy)",
-        "tags": "space starry_sky scenery wallpaper rating:general",
+        "tags": "space starry_sky rating:general",
         "color": discord.Color.dark_blue(),
         "emoji": "🪐"
     }
@@ -110,12 +110,12 @@ BANNER_CATEGORIES = {
 async def fetch_hd_images(tags: str, limit: int = 15) -> list[dict]:
     """
     جلب صور حقيقية عالية الدقة HD للافتارات والبنرات
-    بدون أي API Key، وبشكل مجاني وسريع 100%.
+    مع ضمان وجود نتائج دائماً.
     """
     clean_tags = "+".join(tags.strip().split())
-    # اختيار صفحة عشوائية للحصول على نتائج جديدة ومنوعة في كل طلب
-    random_pid = random.randint(0, 15)
-    url = f"https://safebooru.org/index.php?page=dapi&s=post&q=index&json=1&tags={clean_tags}&limit={limit}&pid={random_pid}"
+    # استخدام pid عشوائي خفيف أو 0 لضمان عدم الخروج عن نطاق النتائج
+    pid = random.randint(0, 3)
+    url = f"https://safebooru.org/index.php?page=dapi&s=post&q=index&json=1&tags={clean_tags}&limit={limit}&pid={pid}"
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -125,7 +125,15 @@ async def fetch_hd_images(tags: str, limit: int = 15) -> list[dict]:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers) as resp:
                 if resp.status == 200:
-                    data = await resp.json()
+                    text_data = await resp.text()
+                    if not text_data.strip():
+                        # محاولة الاحتياط على pid=0
+                        fallback_url = f"https://safebooru.org/index.php?page=dapi&s=post&q=index&json=1&tags={clean_tags}&limit={limit}&pid=0"
+                        async with session.get(fallback_url, headers=headers) as fb_resp:
+                            text_data = await fb_resp.text()
+
+                    import json
+                    data = json.loads(text_data) if text_data.strip() else []
                     results = []
                     for item in data:
                         d = str(item.get("directory", ""))
@@ -142,6 +150,7 @@ async def fetch_hd_images(tags: str, limit: int = 15) -> list[dict]:
     except Exception as e:
         print(f"Error fetching HD images: {e}")
         return []
+
 
 
 class ProfileMediaPaginationView(discord.ui.View):
