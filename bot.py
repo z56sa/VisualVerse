@@ -15,8 +15,8 @@ if sys.platform == "win32":
 load_dotenv()
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-TENOR_API_KEY = os.getenv("TENOR_API_KEY")
-TENOR_CLIENT_KEY = os.getenv("TENOR_CLIENT_KEY", "discord_gif_bot")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
 PORT = int(os.getenv("PORT", 8080))
 
 
@@ -39,88 +39,93 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 CATEGORIES = {
     "gaming": {
         "label": "ألعاب (Gaming)",
-        "query": "gaming video games",
+        "query": "gaming video games wallpaper gif",
         "color": discord.Color.purple(),
         "emoji": "🎮"
     },
     "anime": {
         "label": "أنمي (Anime)",
-        "query": "anime aesthetic",
+        "query": "anime aesthetic gif",
         "color": discord.Color.magenta(),
         "emoji": "🌸"
     },
     "nature": {
         "label": "طبيعة (Nature)",
-        "query": "nature landscape aesthetics",
+        "query": "nature landscape photography gif",
         "color": discord.Color.green(),
         "emoji": "🌿"
     },
     "memes": {
         "label": "ميمز (Memes)",
-        "query": "funny memes laugh",
+        "query": "funny memes gif",
         "color": discord.Color.gold(),
         "emoji": "😂"
     },
     "cats": {
         "label": "قطط (Cats)",
-        "query": "cute funny cats",
+        "query": "cute funny cats gif",
         "color": discord.Color.orange(),
         "emoji": "🐱"
     },
     "cyberpunk": {
         "label": "سايبربانك (Cyberpunk)",
-        "query": "cyberpunk neon sci-fi",
+        "query": "cyberpunk neon aesthetic gif",
         "color": discord.Color.teal(),
         "emoji": "🌆"
     }
 }
 
 
-async def fetch_tenor_gifs(query: str, limit: int = 15) -> list[dict]:
+async def fetch_google_images(query: str, search_type: str = "animated", limit: int = 10) -> list[dict]:
     """
-    جلب الـ GIFs من Tenor API v2 باستخدام aiohttp بشكل غير متزامن.
+    جلب الصور / الـ GIFs عبر Google Custom Search Engine (CSE) API.
+    search_type: 'animated' لجلب الـ GIFs المتحركة، أو 'image' لجلب صور عامة.
     """
-    url = "https://tenor.googleapis.com/v2/search"
+    url = "https://www.googleapis.com/customsearch/v1"
     params = {
+        "key": GOOGLE_API_KEY,
+        "cx": GOOGLE_CSE_ID,
         "q": query,
-        "key": TENOR_API_KEY,
-        "client_key": TENOR_CLIENT_KEY,
-        "limit": limit,
-        "media_filter": "gif",
-        "contentfilter": "medium"
+        "searchType": "image",
+        "num": min(limit, 10),
+        "safe": "active"
     }
+
+    if search_type == "animated":
+        params["fileType"] = "gif"
+        params["hq"] = "animated"
 
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    results = data.get("results", [])
+                    items = data.get("items", [])
                     extracted = []
-                    for item in results:
-                        media = item.get("media_formats", {})
-                        gif_obj = media.get("gif") or media.get("mediumgif")
-                        if gif_obj and gif_obj.get("url"):
+                    for item in items:
+                        img_url = item.get("link")
+                        if img_url:
                             extracted.append({
-                                "url": gif_obj["url"],
-                                "title": item.get("content_description") or query
+                                "url": img_url,
+                                "title": item.get("title", query)
                             })
                     return extracted
                 else:
-                    print(f"[خطأ Tenor API] رمز الاستجابة: {resp.status}")
+                    err_body = await resp.text()
+                    print(f"[خطأ Google API] رمز: {resp.status} - {err_body}")
                     return []
     except Exception as e:
-        print(f"[استثناء أثناء الاتصال بـ Tenor]: {e}")
+        print(f"[استثناء أثناء الاتصال بـ Google API]: {e}")
         return []
 
 
-class GifPaginationView(discord.ui.View):
+class ImagePaginationView(discord.ui.View):
     """
-    أزرار تفاعلية للتنقل بين الـ GIFs (السابق / التالي / حذف الرسالة).
+    أزرار تفاعلية للتنقل بين الصور والـ GIFs (السابق / التالي / حذف الرسالة).
     """
-    def __init__(self, gifs: list[dict], title: str, color: discord.Color, user: discord.User | discord.Member):
-        super().__init__(timeout=180)  # تنتهي فعالية الأزرار بعد 3 دقائق
-        self.gifs = gifs
+    def __init__(self, items: list[dict], title: str, color: discord.Color, user: discord.User | discord.Member):
+        super().__init__(timeout=180)
+        self.items = items
         self.title = title
         self.color = color
         self.user = user
@@ -128,26 +133,24 @@ class GifPaginationView(discord.ui.View):
         self.update_buttons()
 
     def update_buttons(self):
-        # تعطيل أو تمكين الأزرار حسب الموضع الحالي
         self.btn_prev.disabled = (self.index == 0)
-        self.btn_next.disabled = (self.index >= len(self.gifs) - 1)
+        self.btn_next.disabled = (self.index >= len(self.items) - 1)
 
     def create_embed(self) -> discord.Embed:
-        current_gif = self.gifs[self.index]
+        current_item = self.items[self.index]
         embed = discord.Embed(
             title=f"✨ {self.title}",
-            description=f"**الوصف:** {current_gif['title']}",
+            description=f"**العنوان:** {current_item['title']}",
             color=self.color
         )
-        embed.set_image(url=current_gif["url"])
+        embed.set_image(url=current_item["url"])
         embed.set_footer(
-            text=f"الصورة {self.index + 1} من {len(self.gifs)} • تم الطلب بواسطة {self.user.display_name}",
+            text=f"النتيجة {self.index + 1} من {len(self.items)} • تم الطلب بواسطة {self.user.display_name}",
             icon_url=self.user.display_avatar.url
         )
         return embed
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        # السماح فقط للشخص الذي طلب الأمر بالتفاعل مع الأزرار
         if interaction.user.id != self.user.id:
             await interaction.response.send_message("❌ هذه الأزرار خاصة بصاحب الطلب فقط!", ephemeral=True)
             return False
@@ -162,7 +165,7 @@ class GifPaginationView(discord.ui.View):
 
     @discord.ui.button(label="التالي ▶️", style=discord.ButtonStyle.primary, custom_id="btn_next")
     async def btn_next(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if self.index < len(self.gifs) - 1:
+        if self.index < len(self.items) - 1:
             self.index += 1
             self.update_buttons()
             await interaction.response.edit_message(embed=self.create_embed(), view=self)
@@ -172,7 +175,6 @@ class GifPaginationView(discord.ui.View):
         await interaction.message.delete()
 
     async def on_timeout(self):
-        # تعطيل جميع الأزرار عند انتهاء الوقت
         for child in self.children:
             if isinstance(child, discord.ui.Button):
                 child.disabled = True
@@ -204,12 +206,12 @@ class CategorySelect(discord.ui.Select):
 
         await interaction.response.defer()
 
-        gifs = await fetch_tenor_gifs(cat_data["query"], limit=15)
-        if not gifs:
-            await interaction.followup.send("⚠️ لم يتم العثور على نتائج أو حدث خطأ في Tenor API.", ephemeral=True)
+        items = await fetch_google_images(cat_data["query"], search_type="animated", limit=10)
+        if not items:
+            await interaction.followup.send("⚠️ لم يتم العثور على نتائج أو حدث خطأ أثناء الاتصال بـ Google API.", ephemeral=True)
             return
 
-        view = GifPaginationView(gifs=gifs, title=cat_data["label"], color=cat_data["color"], user=self.user)
+        view = ImagePaginationView(items=items, title=cat_data["label"], color=cat_data["color"], user=self.user)
         await interaction.edit_original_response(embed=view.create_embed(), view=view)
 
 
@@ -236,40 +238,43 @@ async def on_ready():
     print(f"🤖 البوت جاهز ويعمل باسم: {bot.user} (ID: {bot.user.id})")
 
 
-
 # أمر سلاش لعرض قائمة الفئات
-@bot.tree.command(name="categories", description="تصفح صور و GIFs بحسب الفئات المحددة مسبقاً")
+@bot.tree.command(name="categories", description="تصفح صور و GIFs بحسب الفئات المحددة مسبقاً عبر Google")
 async def slash_categories(interaction: discord.Interaction):
-    if not TENOR_API_KEY:
-        await interaction.response.send_message("⚠️ لم يتم ضبط مفتاح TENOR_API_KEY في ملف .env", ephemeral=True)
+    if not GOOGLE_API_KEY or not GOOGLE_CSE_ID:
+        await interaction.response.send_message("⚠️ لم يتم ضبط GOOGLE_API_KEY أو GOOGLE_CSE_ID في متغيرات البيئة.", ephemeral=True)
         return
 
     embed = discord.Embed(
-        title="📂 اختر فئة لتصفح الـ GIFs",
-        description="اختر إحدى الفئات من القائمة المنسدلة بالأسفل لعرض النتائج:",
+        title="📂 اختر فئة لتصفح الصور والـ GIFs",
+        description="اختر إحدى الفئات من القائمة المنسدلة بالأسفل لعرض النتائج عبر Google:",
         color=discord.Color.blurple()
     )
     view = CategorySelectView(user=interaction.user)
     await interaction.response.send_message(embed=embed, view=view)
 
 
-# أمر سلاش للبحث المخصص عن أي GIF
-@bot.tree.command(name="gif", description="ابحث عن أي GIF تريده بالاسم")
-@app_commands.describe(query="الكلمة أو الموضوع الذي تريد البحث عنه")
-async def slash_gif(interaction: discord.Interaction, query: str):
-    if not TENOR_API_KEY:
-        await interaction.response.send_message("⚠️ لم يتم ضبط مفتاح TENOR_API_KEY في ملف .env", ephemeral=True)
+# أمر سلاش للبحث المخصص عن أي GIF أو صورة
+@bot.tree.command(name="image", description="ابحث عن صور أو متحركات عبر Google Custom Search")
+@app_commands.describe(
+    query="الكلمة أو الموضوع الذي تريد البحث عنه",
+    gif_only="هل تبحث عن صور متحركة GIF فقط؟ (نعم / لا)"
+)
+async def slash_image(interaction: discord.Interaction, query: str, gif_only: bool = True):
+    if not GOOGLE_API_KEY or not GOOGLE_CSE_ID:
+        await interaction.response.send_message("⚠️ لم يتم ضبط GOOGLE_API_KEY أو GOOGLE_CSE_ID في متغيرات البيئة.", ephemeral=True)
         return
 
     await interaction.response.defer()
 
-    gifs = await fetch_tenor_gifs(query, limit=15)
-    if not gifs:
+    search_type = "animated" if gif_only else "image"
+    items = await fetch_google_images(query, search_type=search_type, limit=10)
+    if not items:
         await interaction.followup.send(f"⚠️ لم يتم العثور على أي نتائج لكلمة: **{query}**", ephemeral=True)
         return
 
-    view = GifPaginationView(
-        gifs=gifs,
+    view = ImagePaginationView(
+        items=items,
         title=f"نتائج البحث عن: {query}",
         color=discord.Color.blue(),
         user=interaction.user
