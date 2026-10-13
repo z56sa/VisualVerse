@@ -15,15 +15,14 @@ if sys.platform == "win32":
 load_dotenv()
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
+GIPHY_API_KEY = os.getenv("GIPHY_API_KEY", "OB88UtIkWu8ebwwNPlZPLkVEkCmmQU9n")
 PORT = int(os.getenv("PORT", 8080))
 
 
 async def run_web_server():
     """خادم ويب خفيف لإبقاء الخدمة نشطة ومتوافقة مع Render Web Service"""
     app = web.Application()
-    app.router.add_get("/", lambda req: web.Response(text="Bot is running online!"))
+    app.router.add_get("/", lambda req: web.Response(text="VisualVerse Bot is Online & Healthy!"))
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", PORT)
@@ -39,93 +38,88 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 CATEGORIES = {
     "gaming": {
         "label": "ألعاب (Gaming)",
-        "query": "gaming video games wallpaper gif",
+        "query": "gaming video games",
         "color": discord.Color.purple(),
         "emoji": "🎮"
     },
     "anime": {
         "label": "أنمي (Anime)",
-        "query": "anime aesthetic gif",
+        "query": "anime aesthetic",
         "color": discord.Color.magenta(),
         "emoji": "🌸"
     },
     "nature": {
         "label": "طبيعة (Nature)",
-        "query": "nature landscape photography gif",
+        "query": "nature landscape aesthetics",
         "color": discord.Color.green(),
         "emoji": "🌿"
     },
     "memes": {
         "label": "ميمز (Memes)",
-        "query": "funny memes gif",
+        "query": "funny memes",
         "color": discord.Color.gold(),
         "emoji": "😂"
     },
     "cats": {
         "label": "قطط (Cats)",
-        "query": "cute funny cats gif",
+        "query": "cute funny cats",
         "color": discord.Color.orange(),
         "emoji": "🐱"
     },
     "cyberpunk": {
         "label": "سايبربانك (Cyberpunk)",
-        "query": "cyberpunk neon aesthetic gif",
+        "query": "cyberpunk neon sci-fi",
         "color": discord.Color.teal(),
         "emoji": "🌆"
     }
 }
 
 
-async def fetch_google_images(query: str, search_type: str = "animated", limit: int = 10) -> list[dict]:
+async def fetch_giphy_gifs(query: str, limit: int = 15) -> list[dict]:
     """
-    جلب الصور / الـ GIFs عبر Google Custom Search Engine (CSE) API.
-    search_type: 'animated' لجلب الـ GIFs المتحركة، أو 'image' لجلب صور عامة.
+    جلب الـ GIFs من Giphy API باستخدام aiohttp.
     """
-    url = "https://www.googleapis.com/customsearch/v1"
+    url = "https://api.giphy.com/v1/gifs/search"
     params = {
-        "key": GOOGLE_API_KEY,
-        "cx": GOOGLE_CSE_ID,
+        "api_key": GIPHY_API_KEY,
         "q": query,
-        "searchType": "image",
-        "num": min(limit, 10),
-        "safe": "active"
+        "limit": limit,
+        "rating": "pg-13",
+        "lang": "en"
     }
-
-    if search_type == "animated":
-        params["fileType"] = "gif"
-        params["hq"] = "animated"
 
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    items = data.get("items", [])
+                    results = data.get("data", [])
                     extracted = []
-                    for item in items:
-                        img_url = item.get("link")
-                        if img_url:
+                    for item in results:
+                        images = item.get("images", {})
+                        orig = images.get("original") or images.get("downsized_medium") or images.get("fixed_height")
+                        if orig and orig.get("url"):
                             extracted.append({
-                                "url": img_url,
-                                "title": item.get("title", query)
+                                "url": orig["url"],
+                                "title": item.get("title") or query
                             })
                     return extracted
                 else:
-                    err_body = await resp.text()
-                    print(f"[خطأ Google API] رمز: {resp.status} - {err_body}")
+                    err_text = await resp.text()
+                    print(f"[خطأ Giphy API] رمز: {resp.status} - {err_text}")
                     return []
     except Exception as e:
-        print(f"[استثناء أثناء الاتصال بـ Google API]: {e}")
+        print(f"[استثناء أثناء الاتصال بـ Giphy]: {e}")
         return []
 
 
-class ImagePaginationView(discord.ui.View):
+class GifPaginationView(discord.ui.View):
     """
-    أزرار تفاعلية للتنقل بين الصور والـ GIFs (السابق / التالي / حذف الرسالة).
+    أزرار تفاعلية للتنقل بين الـ GIFs (السابق / التالي / حذف الرسالة).
     """
-    def __init__(self, items: list[dict], title: str, color: discord.Color, user: discord.User | discord.Member):
+    def __init__(self, gifs: list[dict], title: str, color: discord.Color, user: discord.User | discord.Member):
         super().__init__(timeout=180)
-        self.items = items
+        self.gifs = gifs
         self.title = title
         self.color = color
         self.user = user
@@ -134,18 +128,18 @@ class ImagePaginationView(discord.ui.View):
 
     def update_buttons(self):
         self.btn_prev.disabled = (self.index == 0)
-        self.btn_next.disabled = (self.index >= len(self.items) - 1)
+        self.btn_next.disabled = (self.index >= len(self.gifs) - 1)
 
     def create_embed(self) -> discord.Embed:
-        current_item = self.items[self.index]
+        current_gif = self.gifs[self.index]
         embed = discord.Embed(
             title=f"✨ {self.title}",
-            description=f"**العنوان:** {current_item['title']}",
+            description=f"**الوصف:** {current_gif['title']}",
             color=self.color
         )
-        embed.set_image(url=current_item["url"])
+        embed.set_image(url=current_gif["url"])
         embed.set_footer(
-            text=f"النتيجة {self.index + 1} من {len(self.items)} • تم الطلب بواسطة {self.user.display_name}",
+            text=f"النتيجة {self.index + 1} من {len(self.gifs)} • تم الطلب بواسطة {self.user.display_name}",
             icon_url=self.user.display_avatar.url
         )
         return embed
@@ -165,7 +159,7 @@ class ImagePaginationView(discord.ui.View):
 
     @discord.ui.button(label="التالي ▶️", style=discord.ButtonStyle.primary, custom_id="btn_next")
     async def btn_next(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if self.index < len(self.items) - 1:
+        if self.index < len(self.gifs) - 1:
             self.index += 1
             self.update_buttons()
             await interaction.response.edit_message(embed=self.create_embed(), view=self)
@@ -206,12 +200,12 @@ class CategorySelect(discord.ui.Select):
 
         await interaction.response.defer()
 
-        items = await fetch_google_images(cat_data["query"], search_type="animated", limit=10)
-        if not items:
-            await interaction.followup.send("⚠️ لم يتم العثور على نتائج أو حدث خطأ أثناء الاتصال بـ Google API.", ephemeral=True)
+        gifs = await fetch_giphy_gifs(cat_data["query"], limit=15)
+        if not gifs:
+            await interaction.followup.send("⚠️ لم يتم العثور على نتائج أو حدث خطأ أثناء الاتصال بـ Giphy API.", ephemeral=True)
             return
 
-        view = ImagePaginationView(items=items, title=cat_data["label"], color=cat_data["color"], user=self.user)
+        view = GifPaginationView(gifs=gifs, title=cat_data["label"], color=cat_data["color"], user=self.user)
         await interaction.edit_original_response(embed=view.create_embed(), view=view)
 
 
@@ -239,47 +233,50 @@ async def on_ready():
 
 
 # أمر سلاش لعرض قائمة الفئات
-@bot.tree.command(name="categories", description="تصفح صور و GIFs بحسب الفئات المحددة مسبقاً عبر Google")
+@bot.tree.command(name="categories", description="تصفح صور متحركة GIFs بحسب الفئات المحددة مسبقاً")
 async def slash_categories(interaction: discord.Interaction):
-    if not GOOGLE_API_KEY or not GOOGLE_CSE_ID:
-        await interaction.response.send_message("⚠️ لم يتم ضبط GOOGLE_API_KEY أو GOOGLE_CSE_ID في متغيرات البيئة.", ephemeral=True)
+    if not GIPHY_API_KEY:
+        await interaction.response.send_message("⚠️ لم يتم ضبط مفتاح GIPHY_API_KEY في متغيرات البيئة.", ephemeral=True)
         return
 
     embed = discord.Embed(
-        title="📂 اختر فئة لتصفح الصور والـ GIFs",
-        description="اختر إحدى الفئات من القائمة المنسدلة بالأسفل لعرض النتائج عبر Google:",
+        title="📂 اختر فئة لتصفح الـ GIFs",
+        description="اختر إحدى الفئات من القائمة المنسدلة بالأسفل لعرض النتائج عبر Giphy:",
         color=discord.Color.blurple()
     )
     view = CategorySelectView(user=interaction.user)
     await interaction.response.send_message(embed=embed, view=view)
 
 
-# أمر سلاش للبحث المخصص عن أي GIF أو صورة
-@bot.tree.command(name="image", description="ابحث عن صور أو متحركات عبر Google Custom Search")
-@app_commands.describe(
-    query="الكلمة أو الموضوع الذي تريد البحث عنه",
-    gif_only="هل تبحث عن صور متحركة GIF فقط؟ (نعم / لا)"
-)
-async def slash_image(interaction: discord.Interaction, query: str, gif_only: bool = True):
-    if not GOOGLE_API_KEY or not GOOGLE_CSE_ID:
-        await interaction.response.send_message("⚠️ لم يتم ضبط GOOGLE_API_KEY أو GOOGLE_CSE_ID في متغيرات البيئة.", ephemeral=True)
+# أمر سلاش للبحث المخصص عن أي GIF
+@bot.tree.command(name="gif", description="ابحث عن أي GIF تريده بالاسم عبر Giphy")
+@app_commands.describe(query="الكلمة أو الموضوع الذي تريد البحث عنه")
+async def slash_gif(interaction: discord.Interaction, query: str):
+    if not GIPHY_API_KEY:
+        await interaction.response.send_message("⚠️ لم يتم ضبط مفتاح GIPHY_API_KEY في متغيرات البيئة.", ephemeral=True)
         return
 
     await interaction.response.defer()
 
-    search_type = "animated" if gif_only else "image"
-    items = await fetch_google_images(query, search_type=search_type, limit=10)
-    if not items:
+    gifs = await fetch_giphy_gifs(query, limit=15)
+    if not gifs:
         await interaction.followup.send(f"⚠️ لم يتم العثور على أي نتائج لكلمة: **{query}**", ephemeral=True)
         return
 
-    view = ImagePaginationView(
-        items=items,
+    view = GifPaginationView(
+        gifs=gifs,
         title=f"نتائج البحث عن: {query}",
         color=discord.Color.blue(),
         user=interaction.user
     )
     await interaction.followup.send(embed=view.create_embed(), view=view)
+
+
+# أمر بديل إضافي image لنفس الوظيفة
+@bot.tree.command(name="image", description="ابحث عن GIFs وصور متحركة عبر Giphy")
+@app_commands.describe(query="الكلمة أو الموضوع الذي تريد البحث عنه")
+async def slash_image(interaction: discord.Interaction, query: str):
+    await slash_gif.callback(interaction, query)
 
 
 if __name__ == "__main__":
