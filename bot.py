@@ -1,5 +1,8 @@
 import os
 import sys
+import json
+import random
+import asyncio
 import aiohttp
 from aiohttp import web
 import discord
@@ -16,103 +19,249 @@ load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 PORT = int(os.getenv("PORT", 8080))
 
+SAFEBOORU = "https://safebooru.org/index.php?page=dapi&s=post&q=index&json=1"
+
+# ======== تصنيفات الافتارات ========
+AVATAR_CATEGORIES = {
+    "anime_boy": {
+        "label": "أنمي أولاد (Anime Boy PFP)",
+        "tags": "1boy solo -animated",
+        "color": discord.Color.blue(),
+        "emoji": "👦"
+    },
+    "anime_girl": {
+        "label": "أنمي بنات (Anime Girl PFP)",
+        "tags": "1girl solo -animated",
+        "color": discord.Color.magenta(),
+        "emoji": "👧"
+    },
+    "dark_purple": {
+        "label": "دارك وبنفسجي (Dark / Purple)",
+        "tags": "1girl solo purple_hair dark -animated",
+        "color": discord.Color.dark_purple(),
+        "emoji": "🖤"
+    },
+    "cyberpunk": {
+        "label": "سايبربانك ونيون (Cyberpunk / Neon)",
+        "tags": "cyberpunk solo -animated",
+        "color": discord.Color.teal(),
+        "emoji": "🌆"
+    },
+    "couple": {
+        "label": "صور طقم (Matching Couple)",
+        "tags": "2girls -animated",
+        "color": discord.Color.fuchsia(),
+        "emoji": "✨"
+    },
+    "cat_cute": {
+        "label": "قطط كيوت (Cute Cats)",
+        "tags": "cat 1girl solo -animated",
+        "color": discord.Color.orange(),
+        "emoji": "🐱"
+    }
+}
+
+# ======== تصنيفات البنرات ========
+BANNER_CATEGORIES = {
+    "dark_purple_scene": {
+        "label": "دارك وبنفسجي (Dark Purple Scene)",
+        "tags": "scenery purple -animated",
+        "color": discord.Color.purple(),
+        "emoji": "🌌"
+    },
+    "anime_landscape": {
+        "label": "مناظر أنمي (Anime Landscape)",
+        "tags": "scenery sky anime -animated",
+        "color": discord.Color.blue(),
+        "emoji": "🌸"
+    },
+    "cyberpunk_city": {
+        "label": "سايبربانك ومدينة (Cyberpunk City)",
+        "tags": "cyberpunk scenery -animated",
+        "color": discord.Color.teal(),
+        "emoji": "🌆"
+    },
+    "space_galaxy": {
+        "label": "فضاء ومجرات (Space / Galaxy)",
+        "tags": "space scenery sky -animated",
+        "color": discord.Color.dark_blue(),
+        "emoji": "🪐"
+    },
+    "forest_nature": {
+        "label": "طبيعة وغابات (Forest / Nature)",
+        "tags": "forest scenery nature -animated",
+        "color": discord.Color.green(),
+        "emoji": "🌿"
+    },
+    "pixel_lofi": {
+        "label": "بكسل ولوفاي (Pixel / Lofi)",
+        "tags": "pixel_art scenery -animated",
+        "color": discord.Color.greyple(),
+        "emoji": "🎮"
+    }
+}
+
 
 async def run_web_server():
-    """خادم ويب خفيف لإبقاء الخدمة نشطة ومتوافقة مع Render"""
     app = web.Application()
-    app.router.add_get("/", lambda req: web.Response(text="VisualVerse Discord Avatar & Banner Fetcher is Online!"))
+    app.router.add_get("/", lambda req: web.Response(text="VisualVerse Bot is Online!"))
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", PORT)
     await site.start()
-    print(f"🌐 خادم الويب يعمل على المنفذ: {PORT}")
+    print(f"🌐 Web server running on port {PORT}")
 
 
-# تفعيل الصلاحيات اللازمة لقراءة الأعضاء
-intents = discord.Intents.default()
-intents.members = True
-bot = commands.Bot(command_prefix="!", intents=intents)
-
-
-class UserAvatarBannerView(discord.ui.View):
+async def fetch_images(tags: str, limit: int = 20) -> list[dict]:
     """
-    أزرار تفاعلية للتبديل بين صورة الحساب وصورة السيرفر والبنر ورابط التحميل.
+    يجلب صور HD ثابتة (JPG/PNG فقط) من Safebooru
     """
-    def __init__(self, target_user: discord.User, member: discord.Member | None, requester: discord.User | discord.Member):
-        super().__init__(timeout=180)
-        self.target_user = target_user
-        self.member = member
+    clean = "+".join(tags.strip().split())
+    pid = random.randint(0, 5)
+    url = f"{SAFEBOORU}&tags={clean}&limit={limit}&pid={pid}"
+
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+                if resp.status != 200:
+                    return []
+                text = await resp.text()
+                if not text.strip() or text.strip() == "[]":
+                    # Fallback: pid=0
+                    fallback = f"{SAFEBOORU}&tags={clean}&limit={limit}&pid=0"
+                    async with session.get(fallback, headers=headers) as r2:
+                        text = await r2.text()
+                        if not text.strip():
+                            return []
+
+                data = json.loads(text)
+                results = []
+                for item in data:
+                    img_file = str(item.get("image", ""))
+                    # استثناء الـ GIF بشكل صارم ✅
+                    if img_file.lower().endswith(".gif"):
+                        continue
+                    d = str(item.get("directory", ""))
+                    if d and img_file:
+                        img_url = f"https://safebooru.org/images/{d}/{img_file}"
+                        results.append({
+                            "url": img_url,
+                            "tags": str(item.get("tags", ""))[:120]
+                        })
+                return results
+        except Exception as e:
+            print(f"[Fetch Error] {e}")
+            return []
+
+
+class BrowseView(discord.ui.View):
+    """
+    عرض الصور مع أزرار التنقل ورابط التحميل المباشر
+    """
+    def __init__(self, images: list[dict], title: str, color: discord.Color, requester: discord.User | discord.Member):
+        super().__init__(timeout=300)
+        self.images = images
+        self.title = title
+        self.color = color
         self.requester = requester
+        self.index = 0
+        self._update_buttons()
 
-        # إذا لم يكن لديه افتار مخصص في السيرفر، نعطل الزر الخاص به
-        if not member or not member.guild_avatar:
-            self.btn_guild_avatar.disabled = True
+    def _update_buttons(self):
+        self.btn_prev.disabled = self.index == 0
+        self.btn_next.disabled = self.index >= len(self.images) - 1
 
-        # إذا لم يكن لديه بنر، نعطل زر البنر
-        if not target_user.banner:
-            self.btn_banner.disabled = True
-
-    def create_avatar_embed(self) -> discord.Embed:
-        avatar_url = self.target_user.display_avatar.url
+    def build_embed(self) -> discord.Embed:
+        img = self.images[self.index]
         embed = discord.Embed(
-            title=f"👤 افتار: {self.target_user.display_name}",
-            description=f"**[🔗 تحميل الصورة بجودة عالية PNG/JPG]({avatar_url})**",
-            color=discord.Color.blue()
+            title=f"🎨 {self.title}",
+            description=f"**[🔗 تحميل الصورة بجودة كاملة (HD)]({img['url']})**\n"
+                        f"انقر على الرابط → ثم اضغط `Save image as...` لحفظها 📥",
+            color=self.color
         )
-        embed.set_image(url=avatar_url)
+        embed.set_image(url=img["url"])
         embed.set_footer(
-            text=f"تم الطلب بواسطة {self.requester.display_name} • معرف المستخدم: {self.target_user.id}",
+            text=f"الصورة {self.index + 1} من {len(self.images)} • طلب بواسطة {self.requester.display_name}",
             icon_url=self.requester.display_avatar.url
         )
         return embed
 
-    def create_guild_avatar_embed(self) -> discord.Embed:
-        guild_avatar_url = self.member.guild_avatar.url if self.member and self.member.guild_avatar else self.target_user.display_avatar.url
-        embed = discord.Embed(
-            title=f"🛡️ افتار السيرفر: {self.target_user.display_name}",
-            description=f"**[🔗 تحميل افتار السيرفر بجودة عالية]({guild_avatar_url})**",
-            color=discord.Color.purple()
-        )
-        embed.set_image(url=guild_avatar_url)
-        embed.set_footer(
-            text=f"تم الطلب بواسطة {self.requester.display_name}",
-            icon_url=self.requester.display_avatar.url
-        )
-        return embed
-
-    def create_banner_embed(self) -> discord.Embed:
-        banner_url = self.target_user.banner.url if self.target_user.banner else None
-        embed = discord.Embed(
-            title=f"🖼️ بنر بروفايل: {self.target_user.display_name}",
-            description=f"**[🔗 تحميل البنر بجودة عالية]({banner_url})**" if banner_url else "لا يوجد بنر لهذا الحساب",
-            color=discord.Color.gold()
-        )
-        if banner_url:
-            embed.set_image(url=banner_url)
-        embed.set_footer(
-            text=f"تم الطلب بواسطة {self.requester.display_name}",
-            icon_url=self.requester.display_avatar.url
-        )
-        return embed
-
-    @discord.ui.button(label="👤 افتار الحساب", style=discord.ButtonStyle.primary, custom_id="btn_avatar")
-    async def btn_avatar(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.edit_message(embed=self.create_avatar_embed(), view=self)
-
-    @discord.ui.button(label="🛡️ افتار السيرفر", style=discord.ButtonStyle.secondary, custom_id="btn_guild_avatar")
-    async def btn_guild_avatar(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.edit_message(embed=self.create_guild_avatar_embed(), view=self)
-
-    @discord.ui.button(label="🖼️ بنر الحساب", style=discord.ButtonStyle.success, custom_id="btn_banner")
-    async def btn_banner(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.edit_message(embed=self.create_banner_embed(), view=self)
-
-    @discord.ui.button(label="🗑️ إغلاق", style=discord.ButtonStyle.danger, custom_id="btn_close")
-    async def btn_close(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.requester.id:
-            await interaction.response.send_message("❌ هذا الزر مخصص لصاحب الطلب فقط!", ephemeral=True)
-            return
+            await interaction.response.send_message("❌ هذه الأزرار للشخص الذي طلب الأمر فقط!", ephemeral=True)
+            return False
+        return True
+
+    @discord.ui.button(label="◀️ السابق", style=discord.ButtonStyle.secondary)
+    async def btn_prev(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.index -= 1
+        self._update_buttons()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    @discord.ui.button(label="التالي ▶️", style=discord.ButtonStyle.primary)
+    async def btn_next(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.index += 1
+        self._update_buttons()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    @discord.ui.button(label="🔀 صور جديدة", style=discord.ButtonStyle.success)
+    async def btn_refresh(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        # إعادة جلب صور جديدة عشوائية
+        new_imgs = await fetch_images(self._tags, 20)
+        if new_imgs:
+            self.images = new_imgs
+            self.index = 0
+            self._update_buttons()
+        await interaction.edit_original_response(embed=self.build_embed(), view=self)
+
+    @discord.ui.button(label="🗑️ إغلاق", style=discord.ButtonStyle.danger)
+    async def btn_close(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.message.delete()
+
+
+class CategorySelect(discord.ui.Select):
+    def __init__(self, categories: dict, section: str, user: discord.User | discord.Member):
+        self.categories = categories
+        self.section = section
+        self.user = user
+
+        options = [
+            discord.SelectOption(label=v["label"], value=k, emoji=v["emoji"])
+            for k, v in categories.items()
+        ]
+        placeholder = "اختر تصنيف الافتار..." if section == "avatar" else "اختر تصنيف البنر..."
+        super().__init__(placeholder=placeholder, min_values=1, max_values=1, options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        if interaction.user.id != self.user.id:
+            await interaction.response.send_message("❌ هذه القائمة للشخص الطالب فقط!", ephemeral=True)
+            return
+
+        key = self.values[0]
+        cat = self.categories[key]
+        await interaction.response.defer()
+
+        imgs = await fetch_images(cat["tags"], 20)
+        if not imgs:
+            await interaction.followup.send("⚠️ لم يتم إيجاد صور حالياً. حاول مرة أخرى!", ephemeral=True)
+            return
+
+        view = BrowseView(images=imgs, title=cat["label"], color=cat["color"], requester=self.user)
+        view._tags = cat["tags"]  # حفظ التاقات لزر "صور جديدة"
+        await interaction.edit_original_response(embed=view.build_embed(), view=view)
+
+
+class CategoryView(discord.ui.View):
+    def __init__(self, categories: dict, section: str, user: discord.User | discord.Member):
+        super().__init__(timeout=60)
+        self.add_item(CategorySelect(categories, section, user))
+
+
+intents = discord.Intents.default()
+bot = commands.Bot(command_prefix="!", intents=intents)
 
 
 @bot.event
@@ -120,66 +269,71 @@ async def on_ready():
     try:
         await run_web_server()
     except Exception as e:
-        print(f"⚠️ تنبيه خادم الويب: {e}")
-
+        print(f"⚠️ Web server warning: {e}")
     try:
         synced = await bot.tree.sync()
-        print(f"✅ تم تسجيل ومزامنة {len(synced)} أمر سلاش بنجاح.")
+        print(f"✅ Synced {len(synced)} slash commands.")
     except Exception as e:
-        print(f"❌ خطأ أثناء مزامنة الأوامر: {e}")
-    print(f"🤖 البوت جاهز باسم: {bot.user}")
+        print(f"❌ Sync error: {e}")
+    print(f"🤖 Bot ready as: {bot.user}")
 
 
-# أمر عرض افتار المستخدم (الشخص نفسه أو شخص آخر بالمنشن)
-@bot.tree.command(name="avatar", description="عرض وتحميل صورة الافتار (Avatar) لحسابك أو لأي شخص بالمنشن كصورة ثابتة بدقة كاملة")
-@app_commands.describe(user="الشخص الذي تريد سرقة/عرض افتاره (اتركه فارغاً لعرض افتارك أنت)")
-async def slash_avatar(interaction: discord.Interaction, user: discord.User = None):
-    target = user or interaction.user
-    await interaction.response.defer()
-
-    # جلب بيانات المستخدم الكاملة مع البنر
-    try:
-        full_user = await bot.fetch_user(target.id)
-    except Exception:
-        full_user = target
-
-    member = interaction.guild.get_member(target.id) if interaction.guild else None
-
-    view = UserAvatarBannerView(target_user=full_user, member=member, requester=interaction.user)
-    await interaction.followup.send(embed=view.create_avatar_embed(), view=view)
+@bot.tree.command(name="avatar", description="تصفح افتارات أنمي جمالية جاهزة للاستخدام كصور HD ثابتة")
+async def slash_avatar(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="👤 تصفح الافتارات الجمالية",
+        description="اختر التصنيف المناسب لعرض مجموعة من الافتارات الأنمي الجمالية بجودة HD جاهزة للاستخدام:",
+        color=discord.Color.blurple()
+    )
+    embed.set_footer(text="جميع الصور ثابتة PNG/JPG عالية الجودة 🖼️")
+    await interaction.response.send_message(
+        embed=embed,
+        view=CategoryView(AVATAR_CATEGORIES, "avatar", interaction.user)
+    )
 
 
-# أمر عرض بنر المستخدم (الشخص نفسه أو شخص آخر بالمنشن)
-@bot.tree.command(name="banner", description="عرض وتحميل بنر البروفايل (Banner) لحسابك أو لأي شخص بالمنشن كصورة بدقة كاملة")
-@app_commands.describe(user="الشخص الذي تريد عرض بنره (اتركه فارغاً لعرض بنرك أنت)")
-async def slash_banner(interaction: discord.Interaction, user: discord.User = None):
-    target = user or interaction.user
-    await interaction.response.defer()
-
-    try:
-        full_user = await bot.fetch_user(target.id)
-    except Exception:
-        full_user = target
-
-    if not full_user.banner:
-        await interaction.followup.send(f"⚠️ المستخدم **{full_user.display_name}** ليس لديه بنر بروفايل مخصص (أو لم يقم بوضع بنر).", ephemeral=True)
-        return
-
-    member = interaction.guild.get_member(target.id) if interaction.guild else None
-
-    view = UserAvatarBannerView(target_user=full_user, member=member, requester=interaction.user)
-    await interaction.followup.send(embed=view.create_banner_embed(), view=view)
+@bot.tree.command(name="banner", description="تصفح بنرات وهيدرات جمالية جاهزة للاستخدام كصور HD عريضة")
+async def slash_banner(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="🖼️ تصفح البنرات الجمالية",
+        description="اختر التصنيف المناسب لعرض مجموعة من البنرات والهيدرات الجمالية الواسعة بجودة HD جاهزة للاستخدام:",
+        color=discord.Color.dark_purple()
+    )
+    embed.set_footer(text="جميع الصور ثابتة PNG/JPG عالية الجودة 🖼️")
+    await interaction.response.send_message(
+        embed=embed,
+        view=CategoryView(BANNER_CATEGORIES, "banner", interaction.user)
+    )
 
 
-# أمر البروفايل الكامل (يعرض الافتار والبنر معاً)
-@bot.tree.command(name="profile", description="عرض بروفايل الشخص بالكامل مع الافتار والبنر الخاص به")
-@app_commands.describe(user="الشخص المطلوب (اتركه فارغاً لعرض بروفايلك)")
-async def slash_profile(interaction: discord.Interaction, user: discord.User = None):
-    await slash_avatar.callback(interaction, user)
+@bot.tree.command(name="help", description="دليل أوامر بوت VisualVerse")
+async def slash_help(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="✨ دليل أوامر VisualVerse",
+        description="بوت لتصفح وتحميل افتارات وبنرات أنمي جمالية ثابتة HD جاهزة لحسابك:",
+        color=discord.Color.gold()
+    )
+    embed.add_field(
+        name="👤 `/avatar`",
+        value="تصفح افتارات أنمي جمالية (أولاد، بنات، دارك، سايبربانك، أطقم، قطط) واحفظ ما يعجبك.",
+        inline=False
+    )
+    embed.add_field(
+        name="🖼️ `/banner`",
+        value="تصفح بنرات وهيدرات واسعة جمالية (دارك بنفسجي، مناظر أنمي، سايبربانك، فضاء، طبيعة، لوفاي بكسل).",
+        inline=False
+    )
+    embed.add_field(
+        name="🔀 زر (صور جديدة)",
+        value="في كل تصنيف يمكنك الضغط على زر **🔀 صور جديدة** للحصول على مجموعة مختلفة من الصور.",
+        inline=False
+    )
+    embed.set_footer(text="كل الصور ثابتة PNG/JPG - لا GIFs. انقر على رابط التحميل لحفظ الصورة.")
+    await interaction.response.send_message(embed=embed)
 
 
 if __name__ == "__main__":
     if not DISCORD_TOKEN:
-        print("❌ خطأ: يرجى وضع DISCORD_TOKEN في ملف .env")
+        print("❌ Error: Please set DISCORD_TOKEN in .env")
     else:
         bot.run(DISCORD_TOKEN)
