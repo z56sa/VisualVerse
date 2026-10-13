@@ -14,7 +14,6 @@ if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
 
-# تحميل المتغيرات البيئية
 load_dotenv()
 
 BOT_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -23,7 +22,7 @@ PORT = int(os.getenv("PORT", 8080))
 
 
 async def run_web_server():
-    """خادم ويب خفيف لإبقاء الخدمة نشطة على Render"""
+    """خادم ويب خفيف لإبقاء الخدمة نشطة ومتوافقة مع Render"""
     app = web.Application()
     app.router.add_get("/", lambda req: web.Response(text="TwinAura Matching Bot is Online!"))
     runner = web.AppRunner(app)
@@ -33,47 +32,45 @@ async def run_web_server():
     print(f"🌐 خادم الويب يعمل على المنفذ: {PORT}")
 
 
-# الفئات المحددة مسبقاً للبحث عن الأفاتار والبنر المتناسقين
+# فئات الأطقم المتناسقة مع تاغات مضمونة 100%
 CATEGORIES = {
     "أنمي": {
-        "unsplash": "matching anime aesthetic",
-        "booru_avatar": "1girl solo aesthetic rating:general",
-        "booru_banner": "scenery aesthetic sky wallpaper rating:general"
+        "unsplash": "anime girl aesthetic",
+        "avatar_tag": "1girl rating:general",
+        "banner_tag": "scenery rating:general"
     },
     "استاتيك": {
-        "unsplash": "minimalist aesthetic matching profile",
-        "booru_avatar": "aesthetic solo rating:general",
-        "booru_banner": "scenery lofi aesthetic wallpaper rating:general"
+        "unsplash": "minimalist aesthetic wallpaper",
+        "avatar_tag": "solo rating:general",
+        "banner_tag": "clouds scenery rating:general"
     },
     "داكن": {
-        "unsplash": "dark gothic purple aesthetic",
-        "booru_avatar": "dark purple_theme solo rating:general",
-        "booru_banner": "scenery dark purple_theme wallpaper rating:general"
+        "unsplash": "dark purple aesthetic",
+        "avatar_tag": "purple_theme rating:general",
+        "banner_tag": "dark scenery rating:general"
     },
     "لطيف": {
-        "unsplash": "cute pastel aesthetic anime",
-        "booru_avatar": "cute 1girl pastel rating:general",
-        "booru_banner": "pastel scenery clouds wallpaper rating:general"
+        "unsplash": "cute pastel anime",
+        "avatar_tag": "cat rating:general",
+        "banner_tag": "sky rating:general"
     }
 }
 
 
 async def fetch_matching_pairs(category: str, limit: int = 10) -> list[dict]:
     """
-    جلب أزواج متناسقة (أفاتار + بنر).
-    إذا كان مفتاح Unsplash متوفراً، يجلب منه.
-    إذا لم يكن متوفراً، يجلب أزواجاً حقيقية عالية الدقة HD مباشرة بدون الحاجة لمفتاح.
+    جلب أزواج متناسقة مضمونة (أفاتار + بنر).
     """
     cat_cfg = CATEGORIES.get(category, CATEGORIES["أنمي"])
     pairs = []
 
-    # 1. تجربة Unsplash إذا تم توفير المفتاح
+    # 1. إذا كان لدى المستخدم مفتاح Unsplash صالح
     if UNSPLASH_API_KEY and UNSPLASH_API_KEY != "YOUR_UNSPLASH_API_KEY":
         query = cat_cfg["unsplash"]
         url = f"https://api.unsplash.com/search/photos?query={query}&client_id={UNSPLASH_API_KEY}&per_page={limit*2}"
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
                     if resp.status == 200:
                         data = await resp.json()
                         results = data.get("results", [])
@@ -84,37 +81,32 @@ async def fetch_matching_pairs(category: str, limit: int = 10) -> list[dict]:
                         if pairs:
                             return pairs
         except Exception as e:
-            print(f"[Unsplash fallback]: {e}")
+            print(f"[Unsplash warning]: {e}")
 
-    # 2. المصدر الاحتياطي المباشر عالي الدقة HD (بدون الحاجة لمفتاح API)
+    # 2. المصدر المباشر السريع (مجاني وبدون مفاتيح ونتائج فورية)
     try:
-        async with aiohttp.ClientSession() as session:
-            headers = {"User-Agent": "Mozilla/5.0"}
-            pid_avatar = random.randint(0, 4)
-            pid_banner = random.randint(0, 4)
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+        pid_a = random.randint(0, 10)
+        pid_b = random.randint(0, 10)
+        url_av = f"https://safebooru.org/index.php?page=dapi&s=post&q=index&json=1&tags={cat_cfg['avatar_tag'].replace(' ', '+')}&limit={limit}&pid={pid_a}"
+        url_bn = f"https://safebooru.org/index.php?page=dapi&s=post&q=index&json=1&tags={cat_cfg['banner_tag'].replace(' ', '+')}&limit={limit}&pid={pid_b}"
 
-            url_avatars = f"https://safebooru.org/index.php?page=dapi&s=post&q=index&json=1&tags={'+'.join(cat_cfg['booru_avatar'].split())}&limit={limit}&pid={pid_avatar}"
-            url_banners = f"https://safebooru.org/index.php?page=dapi&s=post&q=index&json=1&tags={'+'.join(cat_cfg['booru_banner'].split())}&limit={limit}&pid={pid_banner}"
-
-            async with session.get(url_avatars, headers=headers) as r_av, session.get(url_banners, headers=headers) as r_bn:
-                if r_av.status == 200 and r_bn.status == 200:
-                    text_av = await r_av.text()
-                    text_bn = await r_bn.text()
-                    data_av = json.loads(text_av) if text_av.strip() else []
-                    data_bn = json.loads(text_bn) if text_bn.strip() else []
-
-                    min_len = min(len(data_av), len(data_bn))
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=8)) as session:
+            async with session.get(url_av, headers=headers) as r_a, session.get(url_bn, headers=headers) as r_b:
+                if r_a.status == 200 and r_b.status == 200:
+                    data_a = await r_a.json()
+                    data_b = await r_b.json()
+                    min_len = min(len(data_a), len(data_b))
                     for i in range(min_len):
-                        item_a = data_av[i]
-                        item_b = data_bn[i]
-                        av_file = str(item_a.get("image", ""))
-                        bn_file = str(item_b.get("image", ""))
-                        if not av_file.lower().endswith(".gif") and not bn_file.lower().endswith(".gif"):
-                            av_url = f"https://safebooru.org/images/{item_a['directory']}/{av_file}"
-                            bn_url = f"https://safebooru.org/images/{item_b['directory']}/{bn_file}"
-                            pairs.append({"avatar": av_url, "banner": bn_url})
+                        img_a = str(data_a[i].get("image", ""))
+                        img_b = str(data_b[i].get("image", ""))
+                        if not img_a.lower().endswith(".gif") and not img_b.lower().endswith(".gif"):
+                            pairs.append({
+                                "avatar": f"https://safebooru.org/images/{data_a[i]['directory']}/{img_a}",
+                                "banner": f"https://safebooru.org/images/{data_b[i]['directory']}/{img_b}"
+                            })
     except Exception as e:
-        print(f"[Matching fetch error]: {e}")
+        print(f"[Fetch pairs exception]: {e}")
 
     return pairs
 
@@ -126,40 +118,39 @@ class MatchingView(discord.ui.View):
         self.pairs = pairs
         self.category = category
         self.index = 0
-        self.update_button_states()
+        self.update_buttons()
 
-    def update_button_states(self):
-        # تمكين أو تعطيل أزرار التنقل
+    def update_buttons(self):
         self.prev_button.disabled = (self.index == 0)
         self.next_button.disabled = (self.index >= len(self.pairs) - 1)
 
     def update_embed(self) -> discord.Embed:
         pair = self.pairs[self.index]
         embed = discord.Embed(
-            title="✨ أفاتار وبنر متناسقين (Matching Set)",
-            description=f"الفئة: **{self.category}** • عرض الزوج **{self.index + 1}** من أصل **{len(self.pairs)}**\n"
-                        f"*(الأفاتار في الصورة المصغرة والبنر في الصورة الكبيرة)*",
+            title="✨ طقم أفاتار وبنر متناسقين (Matching Set)",
+            description=f"التصنيف: **{self.category}** • الزوج **{self.index + 1}** من أصل **{len(self.pairs)}**\n"
+                        f"*(الأفاتار في الصورة المصغرة 👤 والبنر في الصورة العريضة 🖼️)*",
             color=discord.Color.from_rgb(114, 137, 218)
         )
         embed.set_thumbnail(url=pair.get("avatar"))
         embed.set_image(url=pair.get("banner"))
-        embed.add_field(name="🖼️ تحميل الأفاتار", value=f"[اضغط هنا]({pair.get('avatar')})", inline=True)
-        embed.add_field(name="🌆 تحميل البنر", value=f"[اضغط هنا]({pair.get('banner')})", inline=True)
-        embed.set_footer(text="TwinAura Bot • Matching Profiles • جودة عالية HD")
+        embed.add_field(name="🖼️ تحميل الأفاتار", value=f"[اضغط هنا للتحميل]({pair.get('avatar')})", inline=True)
+        embed.add_field(name="🌆 تحميل البنر", value=f"[اضغط هنا للتحميل]({pair.get('banner')})", inline=True)
+        embed.set_footer(text="TwinAura Bot • Matching Profiles • دقة عالية HD")
         return embed
 
     @discord.ui.button(label="السابق", style=discord.ButtonStyle.secondary, emoji="⬅️")
     async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.index > 0:
             self.index -= 1
-            self.update_button_states()
+            self.update_buttons()
             await interaction.response.edit_message(embed=self.update_embed(), view=self)
 
     @discord.ui.button(label="التالي", style=discord.ButtonStyle.primary, emoji="➡️")
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.index < len(self.pairs) - 1:
             self.index += 1
-            self.update_button_states()
+            self.update_buttons()
             await interaction.response.edit_message(embed=self.update_embed(), view=self)
 
     @discord.ui.button(label="إغلاق", style=discord.ButtonStyle.danger, emoji="🗑️")
@@ -167,7 +158,7 @@ class MatchingView(discord.ui.View):
         await interaction.message.delete()
 
 
-# ==================== إعدادات البوت الأساسية ====================
+# ==================== إعدادات وتشغيل البوت ====================
 class TwinAuraBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
@@ -180,7 +171,7 @@ class TwinAuraBot(commands.Bot):
             print(f"⚠️ تنبيه خادم الويب: {e}")
         try:
             synced = await self.tree.sync()
-            print(f"✅ تم مزامنة {len(synced)} أمر سلاش تفاعلي بنجاح.")
+            print(f"✅ تم مزامنة {len(synced)} أمر تفاعلي بنجاح.")
         except Exception as e:
             print(f"❌ خطأ أثناء المزامنة: {e}")
 
@@ -190,7 +181,7 @@ bot = TwinAuraBot()
 
 @bot.event
 async def on_ready():
-    print(f"🤖 البوت يعمل الآن بنجاح باسم: {bot.user.name}")
+    print(f"🤖 البوت يعمل بنجاح باسم: {bot.user.name}")
 
 
 # ==================== أمر الـ Slash Command الرئيسي ====================
@@ -203,17 +194,22 @@ async def on_ready():
     app_commands.Choice(name="لطيف", value="لطيف")
 ])
 async def matching_command(interaction: discord.Interaction, category: str):
+    # إشعار ديسكورد فوراً بالانتظار لمنع رسالة The application did not respond
     await interaction.response.defer(thinking=True)
 
-    pairs = await fetch_matching_pairs(category, limit=10)
+    try:
+        pairs = await fetch_matching_pairs(category, limit=10)
 
-    if not pairs:
-        await interaction.followup.send("⚠️ لم يتم العثور على أزواج متناسقة حالياً. يرجى المحاولة مرة أخرى.", ephemeral=True)
-        return
+        if not pairs:
+            await interaction.followup.send("⚠️ لم يتم العثور على أزواج متناسقة حالياً، يرجى المحاولة بعد قليل.", ephemeral=True)
+            return
 
-    view = MatchingView(pairs, category)
-    embed = view.update_embed()
-    await interaction.followup.send(embed=embed, view=view)
+        view = MatchingView(pairs, category)
+        embed = view.update_embed()
+        await interaction.followup.send(embed=embed, view=view)
+    except Exception as e:
+        print(f"[Error in matching_command]: {e}")
+        await interaction.followup.send("❌ حدث خطأ أثناء معالجة الطلب، يرجى المحاولة مرة أخرى.", ephemeral=True)
 
 
 if __name__ == "__main__":
