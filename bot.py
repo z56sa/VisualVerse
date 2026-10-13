@@ -35,23 +35,24 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 # تصنيفات مخصصة للافتار والبنر
 AVATAR_CATEGORIES = {
-    "anime_boy": {"label": "أنمي أولاد (Anime Boy)", "query": "anime boy pfp avatar aesthetic", "color": discord.Color.blue(), "emoji": "👦"},
-    "anime_girl": {"label": "أنمي بنات (Anime Girl)", "query": "anime girl pfp avatar aesthetic", "color": discord.Color.purple(), "emoji": "👧"},
-    "cyberpunk": {"label": "سايبربانك ونيون (Cyberpunk/Neon)", "query": "cyberpunk neon pfp avatar", "color": discord.Color.teal(), "emoji": "🌆"},
-    "dark_aesthetic": {"label": "دارك وبلاك (Dark/Goth)", "query": "dark aesthetic pfp grunge emo", "color": discord.Color.dark_grey(), "emoji": "🖤"},
-    "gaming": {"label": "ألعاب (Gaming/Gamer)", "query": "gamer gaming avatar pfp icon", "color": discord.Color.gold(), "emoji": "🎮"},
-    "matching": {"label": "افتارات طقم (Matching/Couple)", "query": "matching pfp anime couple", "color": discord.Color.fuchsia(), "emoji": "✨"},
-    "cats": {"label": "قطط كيوت (Cats/Cute)", "query": "cute cat pfp icon meme", "color": discord.Color.orange(), "emoji": "🐱"}
+    "anime_boy": {"label": "أنمي أولاد (Anime Boy)", "query": "anime boy", "color": discord.Color.blue(), "emoji": "👦"},
+    "anime_girl": {"label": "أنمي بنات (Anime Girl)", "query": "anime girl", "color": discord.Color.purple(), "emoji": "👧"},
+    "cyberpunk": {"label": "سايبربانك ونيون (Cyberpunk/Neon)", "query": "cyberpunk neon", "color": discord.Color.teal(), "emoji": "🌆"},
+    "dark_aesthetic": {"label": "دارك وبلاك (Dark/Goth)", "query": "dark aesthetic", "color": discord.Color.dark_grey(), "emoji": "🖤"},
+    "gaming": {"label": "ألعاب (Gaming/Gamer)", "query": "gaming icon", "color": discord.Color.gold(), "emoji": "🎮"},
+    "matching": {"label": "افتارات طقم (Matching/Couple)", "query": "couple anime", "color": discord.Color.fuchsia(), "emoji": "✨"},
+    "cats": {"label": "قطط كيوت (Cats/Cute)", "query": "cute cat", "color": discord.Color.orange(), "emoji": "🐱"}
 }
 
 BANNER_CATEGORIES = {
-    "anime_banner": {"label": "بنرات أنمي (Anime Banners)", "query": "anime discord banner aesthetic header", "color": discord.Color.magenta(), "emoji": "🌸"},
-    "dark_purple": {"label": "بنرات بنفسجي ودارك (Purple / Dark)", "query": "purple dark discord banner aesthetic header", "color": discord.Color.purple(), "emoji": "🌌"},
-    "cyberpunk_banner": {"label": "بنرات سايبربانك (Cyberpunk / Retro)", "query": "cyberpunk synthwave banner header discord", "color": discord.Color.teal(), "emoji": "🌆"},
-    "nature_lofi": {"label": "طبيعة ولوفاي (Nature / Lofi)", "query": "lofi pixel nature landscape banner header discord", "color": discord.Color.green(), "emoji": "🌿"},
-    "gaming_banner": {"label": "ألعاب وجيمينج (Gaming Banners)", "query": "gaming discord banner header aesthetic", "color": discord.Color.gold(), "emoji": "🎮"},
-    "minimal_glitch": {"label": "غليتش ومينيمال (Glitch / Minimal)", "query": "glitch aesthetic banner header discord", "color": discord.Color.dark_teal(), "emoji": "⚡"}
+    "anime_banner": {"label": "بنرات أنمي (Anime Banners)", "query": "anime banner", "color": discord.Color.magenta(), "emoji": "🌸"},
+    "dark_purple": {"label": "بنرات بنفسجي ودارك (Purple / Dark)", "query": "purple banner", "color": discord.Color.purple(), "emoji": "🌌"},
+    "cyberpunk_banner": {"label": "بنرات سايبربانك (Cyberpunk / Retro)", "query": "cyberpunk banner", "color": discord.Color.teal(), "emoji": "🌆"},
+    "nature_lofi": {"label": "طبيعة ولوفاي (Nature / Lofi)", "query": "pixel banner", "color": discord.Color.green(), "emoji": "🌿"},
+    "gaming_banner": {"label": "ألعاب وجيمينج (Gaming Banners)", "query": "gaming banner", "color": discord.Color.gold(), "emoji": "🎮"},
+    "minimal_glitch": {"label": "غليتش ومينيمال (Glitch / Minimal)", "query": "glitch banner", "color": discord.Color.dark_teal(), "emoji": "⚡"}
 }
+
 
 
 async def fetch_media(query: str, limit: int = 15) -> list[dict]:
@@ -222,8 +223,10 @@ async def on_ready():
 async def slash_avatar(interaction: discord.Interaction, query: str = None):
     if query:
         await interaction.response.defer()
-        full_query = f"{query} pfp avatar aesthetic"
-        items = await fetch_media(full_query, limit=15)
+        clean_q = f"{query} icon" if "anime" in query.lower() else query
+        items = await fetch_media(clean_q, limit=15)
+        if not items:
+            items = await fetch_media(query, limit=15)
         if not items:
             await interaction.followup.send(f"⚠️ لم يتم العثور على افتارات لكلمة: **{query}**", ephemeral=True)
             return
@@ -251,8 +254,10 @@ async def slash_avatar(interaction: discord.Interaction, query: str = None):
 async def slash_banner(interaction: discord.Interaction, query: str = None):
     if query:
         await interaction.response.defer()
-        full_query = f"{query} banner header aesthetic discord"
-        items = await fetch_media(full_query, limit=15)
+        clean_q = f"{query} banner" if "banner" not in query.lower() else query
+        items = await fetch_media(clean_q, limit=15)
+        if not items:
+            items = await fetch_media(query, limit=15)
         if not items:
             await interaction.followup.send(f"⚠️ لم يتم العثور على بنرات لكلمة: **{query}**", ephemeral=True)
             return
@@ -264,6 +269,7 @@ async def slash_banner(interaction: discord.Interaction, query: str = None):
             user=interaction.user
         )
         await interaction.followup.send(embed=view.create_embed(), view=view)
+
     else:
         embed = discord.Embed(
             title="🖼️ اختر تصنيف البنر (Discord Profile Banner)",
