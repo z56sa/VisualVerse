@@ -3,10 +3,10 @@ import axios from 'axios';
 const GIPHY_BASE_URL = 'https://api.giphy.com/v1/gifs';
 
 /**
- * Minimum aspect ratio required for a banner (width / height >= 1.6)
- * Typical banner formats: 16:9 (1.77), 2:1 (2.0), 3:1 (3.0), etc.
+ * Strict Aspect Ratio Threshold:
+ * Requires (width / height >= 1.7) to ensure only genuine, ultra-wide landscape banners are returned.
  */
-const MIN_BANNER_ASPECT_RATIO = 1.6;
+const MIN_BANNER_ASPECT_RATIO = 1.7;
 
 /**
  * Banner optimization suffixes to append to search queries
@@ -37,32 +37,37 @@ function pickRandom(array) {
 }
 
 /**
- * Strict Aspect Ratio Validator:
- * Checks width and height properties for each result.
- * Strictly requires (width / height >= 1.6).
- * Skips any square, tall, or near-square GIFs.
- * 
- * @param {Object} item - Giphy API GIF object
- * @returns {boolean} true only if wide/landscape
+ * فلترة صارمة جداً تمنع أي صورة مربعة أو عمودية أو قريبة من المربع
+ * يدعم كلا من Giphy (images.original) و Tenor (media_formats.gif.dims)
+ * @param {Object} item 
+ * @returns {boolean}
  */
-export function isStrictBannerAspectRatio(item) {
-  const original = item?.images?.original;
-  if (!original) return false;
-
-  const width = parseFloat(original.width);
-  const height = parseFloat(original.height);
+export function isStrictBanner(item) {
+  const width = parseFloat(item.media_formats?.gif?.dims?.[0] || item.images?.original?.width || 0);
+  const height = parseFloat(item.media_formats?.gif?.dims?.[1] || item.images?.original?.height || 1);
 
   if (!width || !height || isNaN(width) || isNaN(height) || height <= 0) {
     return false;
   }
 
-  const ratio = width / height;
-  return ratio >= MIN_BANNER_ASPECT_RATIO;
+  // شرط أن يكون العرض أضعاف الارتفاع (نسبة 1.7 أو أكثر ليكون بانر عريض فعلياً)
+  const aspectRatio = width / height;
+  return aspectRatio >= MIN_BANNER_ASPECT_RATIO;
 }
 
 /**
- * Normalizes a Giphy item into a standardized Banner payload
- * @param {Object} item - Giphy API GIF object
+ * تطبيق الفلترة الصارمة على قائمة نتائج
+ * @param {Array} items 
+ * @returns {Array}
+ */
+export function filterStrictBannerResults(items) {
+  if (!Array.isArray(items)) return [];
+  return items.filter(isStrictBanner);
+}
+
+/**
+ * Normalizes an API item into a standardized Banner payload
+ * @param {Object} item - GIF object
  * @param {string} source - How it was retrieved ('search', 'optimized', 'surprise', 'fallback')
  * @param {string} displayTerm - Search term or description to display
  * @returns {Object|null}
@@ -73,10 +78,13 @@ function formatBannerResponse(item, source, displayTerm) {
   const gifUrl = item.images?.original?.url ||
                  item.images?.downsized_large?.url ||
                  item.images?.downsized_medium?.url ||
+                 item.media_formats?.gif?.url ||
                  item.url;
 
-  const width = item.images?.original?.width || 'Auto';
-  const height = item.images?.original?.height || 'Auto';
+  const width = item.media_formats?.gif?.dims?.[0] || item.images?.original?.width || 'Auto';
+  const height = item.media_formats?.gif?.dims?.[1] || item.images?.original?.height || 'Auto';
+
+  const numericRatio = (parseFloat(width) / parseFloat(height)).toFixed(2);
 
   return {
     id: item.id || 'unknown',
@@ -84,7 +92,7 @@ function formatBannerResponse(item, source, displayTerm) {
     url: gifUrl,
     giphyUrl: item.url || 'https://giphy.com',
     dimensions: `${width}x${height}`,
-    ratio: (parseFloat(width) / parseFloat(height)).toFixed(2),
+    ratio: isNaN(numericRatio) ? 'Wide' : numericRatio,
     source,
     displayTerm
   };
@@ -101,7 +109,7 @@ export async function getSurpriseBanner(apiKey) {
 }
 
 /**
- * Smart Banner Search Engine with STRICT Aspect-Ratio Filtering (>= 1.6)
+ * Smart Banner Search Engine with STRICT Aspect-Ratio Filtering (>= 1.7)
  * @param {string} apiKey 
  * @param {string} query 
  * @param {boolean} isSurprise 
@@ -117,86 +125,88 @@ export async function getSmartBanner(apiKey, query, isSurprise = false) {
     ? rawTerm
     : `${rawTerm} ${suffix}`;
 
-  // 1. Optimized Banner Search with Strict Filter
-  try {
-    const searchOffset = Math.floor(Math.random() * 20);
-    const response = await axios.get(`${GIPHY_BASE_URL}/search`, {
-      params: {
-        api_key: apiKey,
-        q: optimizedQuery,
-        limit: 50, // request larger batch to ensure plenty of wide candidates
-        offset: searchOffset,
-        rating: 'pg-13',
-        lang: 'en'
-      },
-      timeout: 7000
-    });
+  // 1. Optimized Banner Search with Strict Filter (aspectRatio >= 1.7)
+  if (apiKey && apiKey.trim().length > 0) {
+    try {
+      const searchOffset = Math.floor(Math.random() * 20);
+      const response = await axios.get(`${GIPHY_BASE_URL}/search`, {
+        params: {
+          api_key: apiKey,
+          q: optimizedQuery,
+          limit: 50, // جلب 50 نتيجة لاختيار أفضل البانرات العريضة منها
+          offset: searchOffset,
+          rating: 'pg-13',
+          lang: 'en'
+        },
+        timeout: 7000
+      });
 
-    const results = response.data?.data;
-    if (Array.isArray(results) && results.length > 0) {
-      // STRICT FILTER: width / height >= 1.6 (skip square/tall GIFs)
-      const wideBanners = results.filter(isStrictBannerAspectRatio);
-      if (wideBanners.length > 0) {
-        const selected = pickRandom(wideBanners);
-        return formatBannerResponse(selected, isSurprise ? 'surprise' : 'optimized', rawTerm);
+      const results = response.data?.data;
+      if (Array.isArray(results) && results.length > 0) {
+        // فلترة صارمة جداً تمنع أي صورة مربعة أو عمودية
+        const filteredResults = filterStrictBannerResults(results);
+        if (filteredResults.length > 0) {
+          const selected = pickRandom(filteredResults);
+          return formatBannerResponse(selected, isSurprise ? 'surprise' : 'optimized', rawTerm);
+        }
       }
+    } catch (error) {
+      console.warn(`Banner search error for "${optimizedQuery}":`, error.response?.data?.message || error.message);
     }
-  } catch (error) {
-    console.warn(`Banner search error for "${optimizedQuery}":`, error.response?.data?.message || error.message);
+
+    // 2. Retry with raw term + 'banner' with offset 0 and strict filter
+    try {
+      const retryResponse = await axios.get(`${GIPHY_BASE_URL}/search`, {
+        params: {
+          api_key: apiKey,
+          q: `${rawTerm} banner`,
+          limit: 50,
+          offset: 0,
+          rating: 'pg-13'
+        },
+        timeout: 7000
+      });
+
+      const retryResults = retryResponse.data?.data;
+      if (Array.isArray(retryResults) && retryResults.length > 0) {
+        const filteredRetry = filterStrictBannerResults(retryResults);
+        if (filteredRetry.length > 0) {
+          const selected = pickRandom(filteredRetry);
+          return formatBannerResponse(selected, 'search', rawTerm);
+        }
+      }
+    } catch (err) {
+      console.warn(`Retry banner search error:`, err.message);
+    }
+
+    // 3. Fallback to Curated Aesthetic Banners with strict filter (aspectRatio >= 1.7)
+    try {
+      const fallbackTheme = pickRandom(FALLBACK_BANNER_THEMES);
+      const fallbackResponse = await axios.get(`${GIPHY_BASE_URL}/search`, {
+        params: {
+          api_key: apiKey,
+          q: fallbackTheme,
+          limit: 40,
+          offset: Math.floor(Math.random() * 15),
+          rating: 'pg-13'
+        },
+        timeout: 7000
+      });
+
+      const fallbackResults = fallbackResponse.data?.data;
+      if (Array.isArray(fallbackResults) && fallbackResults.length > 0) {
+        const filteredFallback = filterStrictBannerResults(fallbackResults);
+        if (filteredFallback.length > 0) {
+          const selected = pickRandom(filteredFallback);
+          return formatBannerResponse(selected, 'fallback', fallbackTheme);
+        }
+      }
+    } catch (err) {
+      console.warn(`Fallback banner theme search failed:`, err.message);
+    }
   }
 
-  // 2. Retry with raw term + 'banner' with offset 0 and strict filter
-  try {
-    const retryResponse = await axios.get(`${GIPHY_BASE_URL}/search`, {
-      params: {
-        api_key: apiKey,
-        q: `${rawTerm} banner`,
-        limit: 50,
-        offset: 0,
-        rating: 'pg-13'
-      },
-      timeout: 7000
-    });
-
-    const retryResults = retryResponse.data?.data;
-    if (Array.isArray(retryResults) && retryResults.length > 0) {
-      const wideRetry = retryResults.filter(isStrictBannerAspectRatio);
-      if (wideRetry.length > 0) {
-        const selected = pickRandom(wideRetry);
-        return formatBannerResponse(selected, 'search', rawTerm);
-      }
-    }
-  } catch (err) {
-    console.warn(`Retry banner search error:`, err.message);
-  }
-
-  // 3. Fallback to Curated Aesthetic Banners with strict filter
-  try {
-    const fallbackTheme = pickRandom(FALLBACK_BANNER_THEMES);
-    const fallbackResponse = await axios.get(`${GIPHY_BASE_URL}/search`, {
-      params: {
-        api_key: apiKey,
-        q: fallbackTheme,
-        limit: 40,
-        offset: Math.floor(Math.random() * 15),
-        rating: 'pg-13'
-      },
-      timeout: 7000
-    });
-
-    const fallbackResults = fallbackResponse.data?.data;
-    if (Array.isArray(fallbackResults) && fallbackResults.length > 0) {
-      const wideFallback = fallbackResults.filter(isStrictBannerAspectRatio);
-      if (wideFallback.length > 0) {
-        const selected = pickRandom(wideFallback);
-        return formatBannerResponse(selected, 'fallback', fallbackTheme);
-      }
-    }
-  } catch (err) {
-    console.warn(`Fallback banner theme search failed:`, err.message);
-  }
-
-  // 4. Reliable Emergency High-Definition Ultra-Wide Landscape Banner (Ratio: 2.5)
+  // 4. Reliable Emergency High-Definition Ultra-Wide Landscape Banner (Aspect Ratio: 2.5)
   return {
     id: 'emergency-banner',
     title: 'Aesthetic Cyber Cityscape Banner',
