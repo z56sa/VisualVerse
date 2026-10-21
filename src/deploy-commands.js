@@ -1,29 +1,49 @@
 import { REST, Routes } from 'discord.js';
-import { SlashCommandBuilder } from 'discord.js';
 import dotenv from 'dotenv';
+import { setupFeedCommand } from './commands/setup-feed.js';
+import { latestNewsCommand } from './commands/latest-news.js';
+import { dailyRecapCommand } from './commands/daily-recap.js';
+
 dotenv.config();
 
 const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID } = process.env;
-if (!DISCORD_TOKEN || !CLIENT_ID) { console.error('❌ Missing credentials'); process.exit(1); }
+
+if (!DISCORD_TOKEN || !CLIENT_ID) {
+  console.error('❌ Error: DISCORD_TOKEN and CLIENT_ID are required in .env');
+  process.exit(1);
+}
 
 const commands = [
-  new SlashCommandBuilder()
-    .setName('banner')
-    .setDescription('جلب بانر ديسكورد عريض من Pinterest')
-    .addStringOption(opt =>
-      opt.setName('search_term').setDescription('أدخل الموضوع (anime, lofi, cyberpunk...)').setRequired(true).setMaxLength(100)
-    ).toJSON()
+  setupFeedCommand.data.toJSON(),
+  latestNewsCommand.data.toJSON(),
+  dailyRecapCommand.data.toJSON()
 ];
 
 const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
-(async () => {
+
+async function deploy() {
   try {
-    console.log('🚀 Registering commands...');
-    if (GUILD_ID?.trim()) {
-      await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID.trim()), { body: commands });
+    console.log(`🚀 FeedPulse: Registering ${commands.length} application (/) commands...`);
+
+    if (GUILD_ID && GUILD_ID.trim().length > 0) {
+      console.log(`🎯 Registering commands to Guild: ${GUILD_ID}`);
+      await rest.put(
+        Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID.trim()),
+        { body: commands }
+      );
     } else {
-      await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
+      console.log('🌐 Registering commands globally across all Discord servers...');
+      await rest.put(
+        Routes.applicationCommands(CLIENT_ID),
+        { body: commands }
+      );
     }
-    console.log('✅ Commands registered successfully!');
-  } catch (e) { console.error('❌', e); process.exit(1); }
-})();
+
+    console.log('✅ FeedPulse application (/) commands registered successfully!');
+  } catch (error) {
+    console.error('❌ Failed to register commands:', error);
+    process.exit(1);
+  }
+}
+
+deploy();

@@ -1,268 +1,106 @@
 import http from 'http';
-import {
-  Client,
-  GatewayIntentBits,
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  SlashCommandBuilder,
-  REST,
-  Routes
-} from 'discord.js';
+import { Client, GatewayIntentBits, Collection } from 'discord.js';
 import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { setupFeedCommand } from './commands/setup-feed.js';
+import { latestNewsCommand } from './commands/latest-news.js';
+import { dailyRecapCommand } from './commands/daily-recap.js';
+import { checkFeedsAndBroadcast } from './services/autoFeedService.js';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // ─── Health Check Server for Render ──────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 const server = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ status: 'ok', bot: client.user?.tag || 'connecting' }));
+  res.end(JSON.stringify({
+    status: 'ok',
+    bot: client.user?.tag || 'connecting',
+    service: 'FeedPulse AI News Aggregator'
+  }));
 });
-server.listen(PORT, () => console.log(`🌐 Health check server on port ${PORT}`));
+server.listen(PORT, () => console.log(`🌐 FeedPulse Health check server running on port ${PORT}`));
 
-// ─── Load Local Banners Database ─────────────────────────────────────────────
-// Supports either root banners.json or src/banners.json
-let bannersDbPath = path.join(__dirname, '..', 'banners.json');
-if (!fs.existsSync(bannersDbPath)) {
-  bannersDbPath = path.join(__dirname, 'banners.json');
-}
+// ─── Environment Variables ────────────────────────────────────────────────────
+const { DISCORD_TOKEN, GEMINI_API_KEY } = process.env;
 
-let bannersDb = {};
-
-try {
-  const fileData = fs.readFileSync(bannersDbPath, 'utf8');
-  bannersDb = JSON.parse(fileData);
-  const totalCount = Object.values(bannersDb).reduce((acc, curr) => acc + curr.length, 0);
-  console.log(`✅ Loaded ${totalCount} banners across categories:`, Object.keys(bannersDb));
-} catch (err) {
-  console.error('❌ Failed to load banners.json:', err.message);
-  bannersDb = {
-    anime: [
-      {
-        title: 'Anime Scenic Horizon',
-        url: 'https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif',
-        ratio: '2.50'
-      }
-    ]
-  };
-}
-
-// ─── Banner Selection Logic ──────────────────────────────────────────────────
-function pickRandom(arr) {
-  if (!Array.isArray(arr) || arr.length === 0) return null;
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function getBannerByCategory(searchTerm) {
-  const term = (searchTerm || 'anime').toLowerCase().trim();
-  const categories = Object.keys(bannersDb);
-
-  // البحث عن التصنيف المطابق
-  let matchedCategory = categories.find(cat => term.includes(cat) || cat.includes(term));
-
-  if (!matchedCategory) {
-    if (term.includes('game') || term.includes('play') || term.includes('fps')) matchedCategory = 'gaming';
-    else if (term.includes('chill') || term.includes('relax') || term.includes('rain')) matchedCategory = 'lofi';
-    else if (term.includes('neon') || term.includes('synth') || term.includes('future')) matchedCategory = 'cyberpunk';
-    else if (term.includes('sky') || term.includes('star') || term.includes('mountain') || term.includes('sea')) matchedCategory = 'nature';
-    else matchedCategory = 'anime'; // التصنيف الافتراضي
-  }
-
-  const categoryList = bannersDb[matchedCategory] || bannersDb.anime || [];
-  const selected = pickRandom(categoryList);
-
-  return {
-    title: selected.title || 'Discord Landscape Banner',
-    url: selected.url,
-    ratio: selected.ratio || '2.50',
-    category: matchedCategory,
-    displayTerm: searchTerm || matchedCategory
-  };
-}
-
-function getSurpriseBanner() {
-  const categories = Object.keys(bannersDb);
-  const randomCat = pickRandom(categories) || 'anime';
-  return getBannerByCategory(randomCat);
-}
-
-// ─── Embed & Button Builders ─────────────────────────────────────────────────
-function createBannerEmbed(bannerData, user) {
-  return new EmbedBuilder()
-    .setTitle(bannerData.title)
-    .setImage(bannerData.url)
-    .setColor(0x5865f2) // Discord Blurple
-    .setDescription(`🖼️ **بانر ديسكورد عريض فائق الدقة لـ:** **${bannerData.displayTerm}**`)
-    .setFooter({
-      text: `Discord Banner • Ratio ${bannerData.ratio}:1 • Requested by ${user.username}`,
-      iconURL: user.displayAvatarURL()
-    })
-    .setTimestamp();
-}
-
-function buildCustomId(action, term, userId) {
-  return `${action}|${userId}|${(term || '').replace(/\|/g, '').substring(0, 45)}`;
-}
-
-function parseCustomId(customId) {
-  const p = customId.split('|');
-  return { action: p[0] || '', userId: p[1] || '', term: p.slice(2).join('|') || '' };
-}
-
-function createBannerRow(term, userId) {
-  return new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(buildCustomId('banner_another', term, userId))
-      .setLabel('🔄 Another Banner')
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
-      .setCustomId(buildCustomId('banner_surprise', term, userId))
-      .setLabel('🎲 Surprise Banner')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId(buildCustomId('banner_save', term, userId))
-      .setLabel('📌 Save to DM')
-      .setStyle(ButtonStyle.Success)
-  );
-}
-
-// ─── Slash Command Registration ───────────────────────────────────────────────
-const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID } = process.env;
-
-if (!DISCORD_TOKEN || !CLIENT_ID) {
-  console.error('❌ Missing DISCORD_TOKEN or CLIENT_ID in environment variables!');
+if (!DISCORD_TOKEN) {
+  console.error('❌ Missing DISCORD_TOKEN in environment variables!');
   process.exit(1);
 }
 
-async function registerCommands() {
-  const bannerCommand = new SlashCommandBuilder()
-    .setName('banner')
-    .setDescription('جلب بانر ديسكورد عريض (Landscape Header) مضمون وسريع 100%')
-    .addStringOption(opt =>
-      opt.setName('search_term')
-        .setDescription('أدخل موضوع البانر (anime, lofi, gaming, cyberpunk, nature...)')
-        .setRequired(true)
-        .setMaxLength(100)
-    )
-    .toJSON();
-
-  const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
-  try {
-    if (GUILD_ID && GUILD_ID.trim().length > 0) {
-      await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID.trim()), { body: [bannerCommand] });
-      console.log(`✅ Slash command registered to Guild: ${GUILD_ID}`);
-    } else {
-      await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [bannerCommand] });
-      console.log('✅ Slash command registered globally.');
-    }
-  } catch (e) {
-    console.error('❌ Failed to register commands:', e.message);
-  }
+if (!GEMINI_API_KEY) {
+  console.warn('⚠️ Warning: GEMINI_API_KEY is not set. Bot will use built-in smart summarizer fallback.');
 }
 
 // ─── Discord Client Setup ────────────────────────────────────────────────────
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages
+  ]
 });
 
-client.once('clientReady', async readyClient => {
+// Setup Commands Collection
+client.commands = new Collection();
+client.commands.set(setupFeedCommand.data.name, setupFeedCommand);
+client.commands.set(latestNewsCommand.data.name, latestNewsCommand);
+client.commands.set(dailyRecapCommand.data.name, dailyRecapCommand);
+
+// ─── Ready Event & Background Poller ─────────────────────────────────────────
+client.once('clientReady', readyClient => {
   console.log(`🤖 Logged in as ${readyClient.user.tag}!`);
-  console.log('🌟 Custom JSON Database Banner Bot is ready.');
-  readyClient.user.setActivity('/banner [search_term]', { type: 2 });
-  await registerCommands();
+  console.log('⚡ FeedPulse AI News Aggregator Bot is active & running.');
+  readyClient.user.setActivity('📰 تلخيص الأخبار بالذكاء الاصطناعي', { type: 3 }); // Watching
+
+  // فحص الخلاصات التلقائي فور تشغيل البوت
+  checkFeedsAndBroadcast(client, GEMINI_API_KEY);
+
+  // فحص دوري تلقائي كل 10 دقائق للأخبار الجديدة
+  const POLL_INTERVAL = 10 * 60 * 1000;
+  setInterval(() => {
+    checkFeedsAndBroadcast(client, GEMINI_API_KEY);
+  }, POLL_INTERVAL);
 });
 
+// ─── Interaction Listener ────────────────────────────────────────────────────
 client.on('interactionCreate', async interaction => {
+  if (!interaction.isChatInputCommand()) return;
+
+  const command = client.commands.get(interaction.commandName);
+  if (!command) return;
+
   try {
-    // ─── Slash Command /banner ─────────────────────────────────────────────
-    if (interaction.isChatInputCommand() && interaction.commandName === 'banner') {
-      const searchTerm = interaction.options.getString('search_term', true);
-      await interaction.deferReply();
-
-      const bannerData = getBannerByCategory(searchTerm);
-      await interaction.editReply({
-        embeds: [createBannerEmbed(bannerData, interaction.user)],
-        components: [createBannerRow(searchTerm, interaction.user.id)]
-      });
-      return;
-    }
-
-    // ─── Button Interactions ───────────────────────────────────────────────
-    if (interaction.isButton()) {
-      const { action, term } = parseCustomId(interaction.customId);
-
-      // 📌 Save to DM
-      if (action === 'banner_save') {
-        await interaction.deferReply({ flags: 64 });
-        try {
-          const embed = interaction.message.embeds?.[0];
-          if (!embed?.image?.url) {
-            await interaction.editReply({ content: '⚠️ لم يتم العثور على صورة لحفظها.' });
-            return;
-          }
-          const dmEmbed = new EmbedBuilder()
-            .setTitle(`📌 ${embed.title || 'Discord Banner'}`)
-            .setImage(embed.image.url)
-            .setColor(0x5865f2)
-            .setDescription(`محفوظ من **${interaction.guild?.name || 'Discord'}** في <#${interaction.channelId}>`)
-            .setFooter({ text: 'Discord Banner Bot' })
-            .setTimestamp();
-
-          await interaction.user.send({ embeds: [dmEmbed] });
-          await interaction.editReply({ content: '✅ تم إرسال البانر إلى رسائلك الخاصة!' });
-        } catch {
-          await interaction.editReply({ content: '❌ تعذر الإرسال! تأكد من السماح بالرسائل الخاصة في إعدادات السيرفر.' });
-        }
-        return;
-      }
-
-      // 🔄 Another Banner
-      if (action === 'banner_another') {
-        await interaction.deferUpdate();
-        const data = getBannerByCategory(term || 'anime');
-        await interaction.editReply({
-          embeds: [createBannerEmbed(data, interaction.user)],
-          components: [createBannerRow(term || 'anime', interaction.user.id)]
-        });
-        return;
-      }
-
-      // 🎲 Surprise Banner
-      if (action === 'banner_surprise') {
-        await interaction.deferUpdate();
-        const data = getSurpriseBanner();
-        await interaction.editReply({
-          embeds: [createBannerEmbed(data, interaction.user)],
-          components: [createBannerRow('surprise', interaction.user.id)]
-        });
-        return;
-      }
-    }
+    await command.execute(interaction, GEMINI_API_KEY);
   } catch (error) {
-    console.error('Interaction error:', error);
-    const msg = { content: '❌ حدث خطأ، يرجى المحاولة مرة أخرى!', flags: 64 };
+    console.error(`Error executing ${interaction.commandName}:`, error);
+    const errorMessage = {
+      content: '❌ حدث خطأ أثناء تنفيذ هذا الأمر، يرجى المحاولة لاحقاً!',
+      ephemeral: true
+    };
+
     if (interaction.deferred || interaction.replied) {
-      await interaction.followUp(msg).catch(() => {});
+      await interaction.followUp(errorMessage).catch(() => {});
     } else {
-      await interaction.reply(msg).catch(() => {});
+      await interaction.reply(errorMessage).catch(() => {});
     }
   }
 });
 
 // ─── Graceful Shutdown ────────────────────────────────────────────────────────
-process.on('SIGINT', () => { client.destroy(); process.exit(0); });
-process.on('SIGTERM', () => { client.destroy(); process.exit(0); });
+process.on('SIGINT', () => {
+  console.log('Shutting down FeedPulse gracefully...');
+  client.destroy();
+  process.exit(0);
+});
 
-// ─── Login ───────────────────────────────────────────────────────────────────
+process.on('SIGTERM', () => {
+  console.log('Terminating FeedPulse gracefully...');
+  client.destroy();
+  process.exit(0);
+});
+
+// ─── Connect to Discord ───────────────────────────────────────────────────────
 client.login(DISCORD_TOKEN).catch(err => {
-  console.error('❌ Discord login failed:', err.message);
+  console.error('❌ Discord connection failed:', err.message);
   process.exit(1);
 });
