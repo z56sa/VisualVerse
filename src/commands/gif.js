@@ -5,11 +5,11 @@ import { createGifEmbed, createGifActionRow } from '../utils/gifEmbed.js';
 export const gifCommand = {
   data: new SlashCommandBuilder()
     .setName('gif')
-    .setDescription('Search and deliver unlimited GIFs via Giphy with smart fallbacks')
+    .setDescription('Search and deliver unlimited animated GIFs via Giphy')
     .addStringOption(option =>
       option
         .setName('search_term')
-        .setDescription('Enter a keyword, phrase, or sentence to find the perfect GIF')
+        .setDescription('Enter any keyword, anime, emotion, or phrase (e.g. anime, cat, dance)')
         .setRequired(true)
         .setMaxLength(100)
     ),
@@ -22,7 +22,6 @@ export const gifCommand = {
   async execute(interaction, apiKey) {
     const searchTerm = interaction.options.getString('search_term', true);
 
-    // Defer reply to prevent 3-second interaction timeout on slower network requests
     await interaction.deferReply();
 
     const gifData = await getSmartGif(apiKey, searchTerm);

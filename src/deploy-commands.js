@@ -1,7 +1,6 @@
 import { REST, Routes } from 'discord.js';
 import dotenv from 'dotenv';
 import { gifCommand } from './commands/gif.js';
-import { bannerCommand } from './commands/banner.js';
 
 dotenv.config();
 
@@ -12,11 +11,8 @@ if (!DISCORD_TOKEN || !CLIENT_ID) {
   process.exit(1);
 }
 
-const commands = [
-  gifCommand.data.toJSON(),
-  bannerCommand.data.toJSON()
-];
-
+// Commands focused purely on GIFs
+const commands = [gifCommand.data.toJSON()];
 const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 
 async function deploy() {

@@ -5,7 +5,7 @@ const GIPHY_BASE_URL = 'https://api.giphy.com/v1/gifs';
 /**
  * Fallback keywords to query if everything else fails
  */
-const FALLBACK_KEYWORDS = ['reaction', 'funny', 'excited', 'party', 'vibes', 'dance', 'yay'];
+const FALLBACK_KEYWORDS = ['anime', 'funny', 'reaction', 'excited', 'party', 'vibes', 'dance', 'yay', 'gaming'];
 
 /**
  * Picks a random item from an array
@@ -27,7 +27,7 @@ function pickRandom(array) {
 function formatGifResponse(item, source, displayTerm) {
   if (!item) return null;
 
-  // Prefer original GIF URL, fallback to downsized or standard web URL
+  // Use original high quality GIF URL
   const gifUrl = item.images?.original?.url ||
                  item.images?.downsized_medium?.url ||
                  item.images?.downsized?.url ||
@@ -50,8 +50,9 @@ function formatGifResponse(item, source, displayTerm) {
  * @returns {Promise<Object|null>}
  */
 export async function getTrendingGif(apiKey, limit = 25) {
+  if (!apiKey || apiKey.trim().length === 0) return null;
   try {
-    const offset = Math.floor(Math.random() * 50); // Randomize trending offset
+    const offset = Math.floor(Math.random() * 50);
     const response = await axios.get(`${GIPHY_BASE_URL}/trending`, {
       params: {
         api_key: apiKey,
@@ -80,6 +81,7 @@ export async function getTrendingGif(apiKey, limit = 25) {
  * @returns {Promise<Object|null>}
  */
 export async function getRandomGif(apiKey, tag = '') {
+  if (!apiKey || apiKey.trim().length === 0) return null;
   try {
     const response = await axios.get(`${GIPHY_BASE_URL}/random`, {
       params: {
@@ -101,23 +103,18 @@ export async function getRandomGif(apiKey, tag = '') {
 }
 
 /**
- * Primary Smart Search with Multi-Tier Fallback Mechanism
- * Tier 1: Search user's exact query (randomized offset within top results)
- * Tier 2: Strip symbols & search simplified query or individual keywords
- * Tier 3: Random GIF using search tag
- * Tier 4: Search one of the curated fallback reaction keywords
- * Tier 5: Trending GIF
- * Tier 6: Hardcoded ultra-reliable emergency reaction GIF
+ * Primary Pure GIF Search with Multi-Tier Fallback Mechanism
+ * Focuses 100% on pure animated GIFs matching the user's exact intent without adding banner terms.
  *
  * @param {string} apiKey - Giphy API Key
  * @param {string} query - User search term
  * @returns {Promise<Object>} Formatted GIF object guaranteed not to fail
  */
 export async function getSmartGif(apiKey, query) {
-  const cleanQuery = query ? query.trim() : '';
+  const cleanQuery = query ? query.trim() : 'anime';
 
-  // 1. Direct Search with Randomized Offset
-  if (cleanQuery.length > 0) {
+  if (apiKey && apiKey.trim().length > 0) {
+    // 1. Direct Search with Randomized Offset (delivers fresh results)
     try {
       const searchOffset = Math.floor(Math.random() * 25);
       const response = await axios.get(`${GIPHY_BASE_URL}/search`, {
@@ -138,7 +135,7 @@ export async function getSmartGif(apiKey, query) {
         return formatGifResponse(selected, 'search', cleanQuery);
       }
 
-      // If offset was too high and returned 0, retry with offset 0
+      // If offset was too high, retry with offset 0
       if (searchOffset > 0) {
         const retryResponse = await axios.get(`${GIPHY_BASE_URL}/search`, {
           params: {
@@ -162,45 +159,45 @@ export async function getSmartGif(apiKey, query) {
       console.warn(`Search error for "${cleanQuery}":`, error.response?.data?.message || error.message);
     }
 
-    // 2. Fallback: Try Giphy Random endpoint with query as tag
+    // 2. Fallback: Giphy Random endpoint with query as tag
     const randomTagged = await getRandomGif(apiKey, cleanQuery);
     if (randomTagged) return randomTagged;
-  }
 
-  // 3. Fallback: Try a curated fallback reaction query
-  const fallbackTag = pickRandom(FALLBACK_KEYWORDS);
-  try {
-    const fallbackResponse = await axios.get(`${GIPHY_BASE_URL}/search`, {
-      params: {
-        api_key: apiKey,
-        q: fallbackTag,
-        limit: 20,
-        offset: Math.floor(Math.random() * 20),
-        rating: 'pg-13'
-      },
-      timeout: 7000
-    });
+    // 3. Fallback: Curated reaction query
+    const fallbackTag = pickRandom(FALLBACK_KEYWORDS);
+    try {
+      const fallbackResponse = await axios.get(`${GIPHY_BASE_URL}/search`, {
+        params: {
+          api_key: apiKey,
+          q: fallbackTag,
+          limit: 20,
+          offset: Math.floor(Math.random() * 20),
+          rating: 'pg-13'
+        },
+        timeout: 7000
+      });
 
-    const fallbackResults = fallbackResponse.data?.data;
-    if (Array.isArray(fallbackResults) && fallbackResults.length > 0) {
-      const selected = pickRandom(fallbackResults);
-      return formatGifResponse(selected, 'fallback', fallbackTag);
+      const fallbackResults = fallbackResponse.data?.data;
+      if (Array.isArray(fallbackResults) && fallbackResults.length > 0) {
+        const selected = pickRandom(fallbackResults);
+        return formatGifResponse(selected, 'fallback', fallbackTag);
+      }
+    } catch (error) {
+      console.warn(`Fallback search error:`, error.message);
     }
-  } catch (error) {
-    console.warn(`Fallback search error for "${fallbackTag}":`, error.message);
+
+    // 4. Fallback: Trending GIF
+    const trending = await getTrendingGif(apiKey);
+    if (trending) return trending;
   }
 
-  // 4. Fallback: Fetch Trending GIF
-  const trending = await getTrendingGif(apiKey);
-  if (trending) return trending;
-
-  // 5. Ultimate Fallback: High-availability static Giphy CDN link
+  // 5. Ultimate Fallback: High-availability reaction GIF
   return {
     id: 'emergency-fallback',
     title: 'Party Celebration',
     url: 'https://media.giphy.com/media/26AHONQ79FdWZhAI0/giphy.gif',
     giphyUrl: 'https://giphy.com',
     source: 'emergency_fallback',
-    displayTerm: cleanQuery || 'Surprise'
+    displayTerm: cleanQuery
   };
 }

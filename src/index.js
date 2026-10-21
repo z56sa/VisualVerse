@@ -2,7 +2,6 @@ import http from 'http';
 import { Client, GatewayIntentBits, Collection } from 'discord.js';
 import dotenv from 'dotenv';
 import { gifCommand } from './commands/gif.js';
-import { bannerCommand } from './commands/banner.js';
 import { handleButtonInteraction } from './handlers/buttonHandler.js';
 
 dotenv.config();
@@ -30,11 +29,7 @@ if (!DISCORD_TOKEN) {
   process.exit(1);
 }
 
-if (!GIPHY_API_KEY) {
-  console.warn('⚠️ Warning: GIPHY_API_KEY is not set or empty in .env. Bot will use fallback mode.');
-}
-
-// Initialize Discord Client with appropriate intents
+// Initialize Discord Client
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -42,16 +37,15 @@ const client = new Client({
   ]
 });
 
-// Setup commands collection
+// Setup commands collection focused on GIFs
 client.commands = new Collection();
 client.commands.set(gifCommand.data.name, gifCommand);
-client.commands.set(bannerCommand.data.name, bannerCommand);
 
 // Ready event
 client.once('ready', (readyClient) => {
   console.log(`🤖 Logged in as ${readyClient.user.tag}!`);
-  console.log(`🌟 GIF & Animated Banner Bot ready.`);
-  readyClient.user.setActivity('/banner & /gif', { type: 2 }); // Listening to commands
+  console.log(`🌟 GIF Bot ready to deliver unlimited GIFs.`);
+  readyClient.user.setActivity('/gif [search_term]', { type: 2 });
 });
 
 // Interaction listener
@@ -92,13 +86,11 @@ client.on('interactionCreate', async (interaction) => {
 
 // Graceful shutdown
 process.on('SIGINT', () => {
-  console.log('\nShutting down bot gracefully...');
   client.destroy();
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-  console.log('\nTerminating bot gracefully...');
   client.destroy();
   process.exit(0);
 });
