@@ -13,14 +13,14 @@ const server = http.createServer((req, res) => {
 });
 server.listen(PORT, () => console.log(`🌐 Health check server on port ${PORT}`));
 
-const { DISCORD_TOKEN, PIXABAY_API_KEY } = process.env;
+const { DISCORD_TOKEN, GIPHY_API_KEY } = process.env;
 
 if (!DISCORD_TOKEN) {
   console.error('❌ Missing DISCORD_TOKEN!');
   process.exit(1);
 }
-if (!PIXABAY_API_KEY) {
-  console.warn('⚠️ PIXABAY_API_KEY is not set! Banners may not load.');
+if (!GIPHY_API_KEY) {
+  console.warn('⚠️ GIPHY_API_KEY is not set! Banners will use fallback.');
 }
 
 const client = new Client({
@@ -32,7 +32,7 @@ client.commands.set(bannerCommand.data.name, bannerCommand);
 
 client.once('clientReady', readyClient => {
   console.log(`🤖 Logged in as ${readyClient.user.tag}!`);
-  console.log('🌟 Discord Animated Banner Bot ready.');
+  console.log('🌟 Animated Banner Bot ready – powered by Giphy.');
   readyClient.user.setActivity('/banner [search_term]', { type: 2 });
 });
 
@@ -41,11 +41,11 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isChatInputCommand()) {
       const command = client.commands.get(interaction.commandName);
       if (!command) return;
-      await command.execute(interaction, PIXABAY_API_KEY);
+      await command.execute(interaction, GIPHY_API_KEY);
       return;
     }
     if (interaction.isButton()) {
-      await handleButtonInteraction(interaction, PIXABAY_API_KEY);
+      await handleButtonInteraction(interaction, GIPHY_API_KEY);
     }
   } catch (error) {
     console.error('Interaction error:', error);
