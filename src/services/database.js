@@ -15,39 +15,39 @@ const dbFilePath = path.join(dataDir, 'visualverse_data.json');
 const defaultSeed = [
   {
     id: 1,
-    title: 'Neon Cyberpunk Samurai',
+    title: 'Anime Sunset Aesthetic',
     category: 'anime',
-    avatar_url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1024&q=80',
-    banner_url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1024&q=80',
-    source: 'Default Gallery',
-    created_at: new Date().toISOString()
+    avatarUrl: 'https://th.wallhaven.cc/lg/ly/lygl92.jpg',
+    bannerUrl: 'https://w.wallhaven.cc/full/ly/wallhaven-lygl92.png',
+    source: 'Wallhaven Anime',
+    createdAt: new Date().toISOString()
   },
   {
     id: 2,
-    title: 'Cozy Sunset Couple',
+    title: 'Romantic Couple Rooftop',
     category: 'couples',
-    avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1024&q=80',
-    banner_url: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=1024&q=80',
-    source: 'Default Gallery',
-    created_at: new Date().toISOString()
+    avatarUrl: 'https://th.wallhaven.cc/orig/yq/yqkgj7.jpg',
+    bannerUrl: 'https://w.wallhaven.cc/full/yq/wallhaven-yqkgj7.png',
+    source: 'Wallhaven Couples',
+    createdAt: new Date().toISOString()
   },
   {
     id: 3,
-    title: 'Dark Minimalist Aesthetic',
+    title: 'Neon Tokyo Cyberpunk',
     category: 'aesthetic',
-    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1024&q=80',
-    banner_url: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1024&q=80',
-    source: 'Default Gallery',
-    created_at: new Date().toISOString()
+    avatarUrl: 'https://th.wallhaven.cc/lg/7j/7jx86v.jpg',
+    bannerUrl: 'https://w.wallhaven.cc/full/7j/wallhaven-7jx86v.png',
+    source: 'Wallhaven Aesthetic',
+    createdAt: new Date().toISOString()
   },
   {
     id: 4,
-    title: 'Ethereal Cosmic Fantasy',
+    title: 'Valorant Reyna & Omen',
     category: 'gaming',
-    avatar_url: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=1024&q=80',
-    banner_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1024&q=80',
-    source: 'Default Gallery',
-    created_at: new Date().toISOString()
+    avatarUrl: 'https://th.wallhaven.cc/lg/6l/6le8rw.jpg',
+    bannerUrl: 'https://w.wallhaven.cc/full/6l/wallhaven-6le8rw.jpg',
+    source: 'Wallhaven Gaming',
+    createdAt: new Date().toISOString()
   }
 ];
 
@@ -61,7 +61,17 @@ class DatabaseStore {
     try {
       if (fs.existsSync(dbFilePath)) {
         const raw = fs.readFileSync(dbFilePath, 'utf8');
-        this.pairs = JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        // Normalize fields if needed
+        this.pairs = parsed.map(item => ({
+          id: item.id,
+          title: item.title,
+          category: (item.category || 'anime').toLowerCase().trim(),
+          avatarUrl: item.avatarUrl || item.avatar_url || '',
+          bannerUrl: item.bannerUrl || item.banner_url || '',
+          source: item.source || 'Admin',
+          createdAt: item.createdAt || item.created_at || new Date().toISOString()
+        }));
       } else {
         this.pairs = [...defaultSeed];
         this._save();
@@ -80,16 +90,16 @@ class DatabaseStore {
     }
   }
 
-  addPair({ title, category, avatar_url, banner_url, source }) {
+  addPair({ title, category, avatarUrl, bannerUrl, source }) {
     const nextId = this.pairs.length > 0 ? Math.max(...this.pairs.map(p => p.id)) + 1 : 1;
     const newRecord = {
       id: nextId,
-      title,
+      title: title.trim(),
       category: category.toLowerCase().trim(),
-      avatar_url,
-      banner_url,
+      avatarUrl: (avatarUrl || '').trim(),
+      bannerUrl: (bannerUrl || '').trim(),
       source: source || 'Admin',
-      created_at: new Date().toISOString()
+      createdAt: new Date().toISOString()
     };
     this.pairs.push(newRecord);
     this._save();
@@ -104,11 +114,13 @@ class DatabaseStore {
     }
 
     if (excludeId && filtered.length > 1) {
-      filtered = filtered.filter(p => p.id !== excludeId);
+      filtered = filtered.filter(p => p.id !== Number(excludeId));
     }
 
     if (filtered.length === 0) {
-      return null;
+      // Fallback: search ignoring category if empty
+      filtered = this.pairs;
+      if (filtered.length === 0) return null;
     }
 
     const randomIndex = Math.floor(Math.random() * filtered.length);

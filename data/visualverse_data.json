@@ -3,90 +3,90 @@
     "id": 1,
     "title": "Anime Sunset Aesthetic",
     "category": "anime",
-    "avatar_url": "https://th.wallhaven.cc/lg/ly/lygl92.jpg",
-    "banner_url": "https://w.wallhaven.cc/full/ly/wallhaven-lygl92.png",
+    "avatarUrl": "https://th.wallhaven.cc/lg/ly/lygl92.jpg",
+    "bannerUrl": "https://w.wallhaven.cc/full/ly/wallhaven-lygl92.png",
     "source": "Wallhaven Anime",
-    "created_at": "2026-10-21T17:45:00.000Z"
+    "createdAt": "2026-10-21T17:45:00.000Z"
   },
   {
     "id": 2,
     "title": "Anime Samurai Moonlight",
     "category": "anime",
-    "avatar_url": "https://th.wallhaven.cc/lg/3q/3q7mo3.jpg",
-    "banner_url": "https://w.wallhaven.cc/full/3q/wallhaven-3q7mo3.png",
+    "avatarUrl": "https://th.wallhaven.cc/lg/3q/3q7mo3.jpg",
+    "bannerUrl": "https://w.wallhaven.cc/full/3q/wallhaven-3q7mo3.png",
     "source": "Wallhaven Anime",
-    "created_at": "2026-10-21T17:45:00.000Z"
+    "createdAt": "2026-10-21T17:45:00.000Z"
   },
   {
     "id": 3,
     "title": "Cyberpunk Neon Girl",
     "category": "anime",
-    "avatar_url": "https://th.wallhaven.cc/lg/vp/vp28xp.jpg",
-    "banner_url": "https://w.wallhaven.cc/full/vp/wallhaven-vp28xp.png",
+    "avatarUrl": "https://th.wallhaven.cc/lg/vp/vp28xp.jpg",
+    "bannerUrl": "https://w.wallhaven.cc/full/vp/wallhaven-vp28xp.png",
     "source": "Wallhaven Anime",
-    "created_at": "2026-10-21T17:45:00.000Z"
+    "createdAt": "2026-10-21T17:45:00.000Z"
   },
   {
     "id": 4,
     "title": "Romantic Couple Rooftop",
     "category": "couples",
-    "avatar_url": "https://th.wallhaven.cc/orig/yq/yqkgj7.jpg",
-    "banner_url": "https://w.wallhaven.cc/full/yq/wallhaven-yqkgj7.png",
+    "avatarUrl": "https://th.wallhaven.cc/orig/yq/yqkgj7.jpg",
+    "bannerUrl": "https://w.wallhaven.cc/full/yq/wallhaven-yqkgj7.png",
     "source": "Wallhaven Couples",
-    "created_at": "2026-10-21T17:45:00.000Z"
+    "createdAt": "2026-10-21T17:45:00.000Z"
   },
   {
     "id": 5,
     "title": "Sunset Beach Couple",
     "category": "couples",
-    "avatar_url": "https://th.wallhaven.cc/orig/6l/6lelp6.jpg",
-    "banner_url": "https://w.wallhaven.cc/full/6l/wallhaven-6lelp6.jpg",
+    "avatarUrl": "https://th.wallhaven.cc/orig/6l/6lelp6.jpg",
+    "bannerUrl": "https://w.wallhaven.cc/full/6l/wallhaven-6lelp6.jpg",
     "source": "Wallhaven Couples",
-    "created_at": "2026-10-21T17:45:00.000Z"
+    "createdAt": "2026-10-21T17:45:00.000Z"
   },
   {
     "id": 6,
     "title": "Starlight Sky Duo",
     "category": "couples",
-    "avatar_url": "https://th.wallhaven.cc/orig/ly/lydrml.jpg",
-    "banner_url": "https://w.wallhaven.cc/full/ly/wallhaven-lydrml.jpg",
+    "avatarUrl": "https://th.wallhaven.cc/orig/ly/lydrml.jpg",
+    "bannerUrl": "https://w.wallhaven.cc/full/ly/wallhaven-lydrml.jpg",
     "source": "Wallhaven Couples",
-    "created_at": "2026-10-21T17:45:00.000Z"
+    "createdAt": "2026-10-21T17:45:00.000Z"
   },
   {
     "id": 7,
     "title": "Neon Tokyo Cyberpunk",
     "category": "aesthetic",
-    "avatar_url": "https://th.wallhaven.cc/lg/7j/7jx86v.jpg",
-    "banner_url": "https://w.wallhaven.cc/full/7j/wallhaven-7jx86v.png",
+    "avatarUrl": "https://th.wallhaven.cc/lg/7j/7jx86v.jpg",
+    "bannerUrl": "https://w.wallhaven.cc/full/7j/wallhaven-7jx86v.png",
     "source": "Wallhaven Aesthetic",
-    "created_at": "2026-10-21T17:45:00.000Z"
+    "createdAt": "2026-10-21T17:45:00.000Z"
   },
   {
     "id": 8,
     "title": "Future Cyber Street",
     "category": "aesthetic",
-    "avatar_url": "https://th.wallhaven.cc/lg/6l/6lexq6.jpg",
-    "banner_url": "https://w.wallhaven.cc/full/6l/wallhaven-6lexq6.png",
+    "avatarUrl": "https://th.wallhaven.cc/lg/6l/6lexq6.jpg",
+    "bannerUrl": "https://w.wallhaven.cc/full/6l/wallhaven-6lexq6.png",
     "source": "Wallhaven Aesthetic",
-    "created_at": "2026-10-21T17:45:00.000Z"
+    "createdAt": "2026-10-21T17:45:00.000Z"
   },
   {
     "id": 9,
     "title": "Valorant Reyna & Omen",
     "category": "gaming",
-    "avatar_url": "https://th.wallhaven.cc/lg/6l/6le8rw.jpg",
-    "banner_url": "https://w.wallhaven.cc/full/6l/wallhaven-6le8rw.jpg",
+    "avatarUrl": "https://th.wallhaven.cc/lg/6l/6le8rw.jpg",
+    "bannerUrl": "https://w.wallhaven.cc/full/6l/wallhaven-6le8rw.jpg",
     "source": "Wallhaven Gaming",
-    "created_at": "2026-10-21T17:45:00.000Z"
+    "createdAt": "2026-10-21T17:45:00.000Z"
   },
   {
     "id": 10,
     "title": "Valorant Jett Blade Storm",
     "category": "gaming",
-    "avatar_url": "https://th.wallhaven.cc/lg/og/og7prl.jpg",
-    "banner_url": "https://w.wallhaven.cc/full/og/wallhaven-og7prl.jpg",
+    "avatarUrl": "https://th.wallhaven.cc/lg/og/og7prl.jpg",
+    "bannerUrl": "https://w.wallhaven.cc/full/og/wallhaven-og7prl.jpg",
     "source": "Wallhaven Gaming",
-    "created_at": "2026-10-21T17:45:00.000Z"
+    "createdAt": "2026-10-21T17:45:00.000Z"
   }
 ]

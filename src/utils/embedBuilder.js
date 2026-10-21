@@ -1,9 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
 export const embedUtils = {
-  /**
-   * Primary brand color (Blurple / Violet gradient aesthetic)
-   */
   colors: {
     primary: 0x5865F2,
     success: 0x57F287,
@@ -15,43 +12,71 @@ export const embedUtils = {
 
   /**
    * Build embed and action buttons for a matching pair
+   * Displays banner at the bottom (.setImage) and avatar as thumbnail (.setThumbnail)
    */
   createMatchingPairEmbed(pair, interactionUser) {
+    const avatarUrl = pair.avatarUrl || pair.avatar_url || null;
+    const bannerUrl = pair.bannerUrl || pair.banner_url || null;
+    const pairId = pair.id || 'N/A';
+    const pairTitle = pair.title || 'ثنائي متطابق';
+    const pairCategory = (pair.category || 'عام').toUpperCase();
+
     const embed = new EmbedBuilder()
       .setColor(this.colors.purple)
-      .setTitle(`✨ ثنائي متطابق: ${pair.title}`)
+      .setTitle(`✨ ثنائي متطابق: ${pairTitle}`)
       .setDescription(
-        `📁 **الفئة:** \`${pair.category.toUpperCase()}\`\n` +
-        `🆔 **المعرف:** \`#${pair.id}\`\n\n` +
+        `📁 **الفئة:** \`${pairCategory}\`\n` +
+        `🆔 **المعرف:** \`#${pairId}\`\n\n` +
         `> 💡 *الصورة بالأسفل هي **البنر (Banner)**، بينما المصغرة في الزاوية هي **الافتار (Avatar)**.*`
       )
-      .setThumbnail(pair.avatar_url)
-      .setImage(pair.banner_url)
       .setFooter({
         text: `طلب بواسطة ${interactionUser.username} • VisualVerse Studio`,
         iconURL: interactionUser.displayAvatarURL({ dynamic: true })
       })
       .setTimestamp();
 
+    // Set Avatar in the corner (Thumbnail)
+    if (avatarUrl && typeof avatarUrl === 'string' && avatarUrl.trim().length > 0) {
+      embed.setThumbnail(avatarUrl.trim());
+    }
+
+    // Set Banner at the bottom full size (Image)
+    if (bannerUrl && typeof bannerUrl === 'string' && bannerUrl.trim().length > 0) {
+      embed.setImage(bannerUrl.trim());
+    }
+
     // Interactive Action Row
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId(`matching_next_${pair.category}_${pair.id}`)
+        .setCustomId(`matching_next_${pair.category || 'all'}_${pairId}`)
         .setLabel('صورة أخرى 🔄')
-        .setStyle(ButtonStyle.Primary),
+        .setStyle(ButtonStyle.Primary)
+    );
 
-      new ButtonBuilder()
-        .setLabel('تحميل افتار HD 📥')
-        .setStyle(ButtonStyle.Link)
-        .setURL(pair.avatar_url),
+    // Add Avatar download link button if valid URL
+    if (avatarUrl && avatarUrl.startsWith('http')) {
+      row.addComponents(
+        new ButtonBuilder()
+          .setLabel('تحميل افتار HD 📥')
+          .setStyle(ButtonStyle.Link)
+          .setURL(avatarUrl.trim())
+      );
+    }
 
-      new ButtonBuilder()
-        .setLabel('تحميل بنر HD 📥')
-        .setStyle(ButtonStyle.Link)
-        .setURL(pair.banner_url),
+    // Add Banner download link button if valid URL
+    if (bannerUrl && bannerUrl.startsWith('http')) {
+      row.addComponents(
+        new ButtonBuilder()
+          .setLabel('تحميل بنر HD 📥')
+          .setStyle(ButtonStyle.Link)
+          .setURL(bannerUrl.trim())
+      );
+    }
 
+    // Send to DM button
+    row.addComponents(
       new ButtonBuilder()
-        .setCustomId(`matching_dm_${pair.id}`)
+        .setCustomId(`matching_dm_${pairId}`)
         .setLabel('إرسال للخاص 📩')
         .setStyle(ButtonStyle.Secondary)
     );
@@ -76,8 +101,11 @@ export const embedUtils = {
         `🎨 **لون الهيدر:** \`${bannerColor}\`\n` +
         `🖼️ **البنر:** ${bannerUrl ? '[اضغط للعرض المباشر](' + bannerUrl + ')' : '❌ لا يوجد بنر مخصص'}`
       )
-      .setThumbnail(avatarUrl)
       .setTimestamp();
+
+    if (avatarUrl) {
+      embed.setThumbnail(avatarUrl);
+    }
 
     if (bannerUrl) {
       embed.setImage(bannerUrl);
@@ -102,9 +130,6 @@ export const embedUtils = {
     return { embed, row };
   },
 
-  /**
-   * Build success message embed
-   */
   success(title, message) {
     return new EmbedBuilder()
       .setColor(this.colors.success)
@@ -113,9 +138,6 @@ export const embedUtils = {
       .setTimestamp();
   },
 
-  /**
-   * Build error message embed
-   */
   error(title, message) {
     return new EmbedBuilder()
       .setColor(this.colors.error)

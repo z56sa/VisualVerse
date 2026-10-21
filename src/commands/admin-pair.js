@@ -83,8 +83,8 @@ export const adminPairCommand = {
         const { id } = dbService.addPair({
           title,
           category,
-          avatar_url: avatarUrl,
-          banner_url: bannerUrl,
+          avatarUrl,
+          bannerUrl,
           source
         });
 
