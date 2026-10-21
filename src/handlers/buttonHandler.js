@@ -1,143 +1,63 @@
 import { EmbedBuilder } from 'discord.js';
-import { getSmartGif, getTrendingGif } from '../services/giphyService.js';
-import { createGifEmbed, createGifActionRow, parseCustomId } from '../utils/gifEmbed.js';
 import { getSmartBanner, getSurpriseBanner } from '../services/bannerService.js';
 import { createBannerEmbed, createBannerActionRow, parseBannerCustomId } from '../utils/bannerEmbed.js';
 
 /**
- * Handles incoming button clicks on GIF & Banner messages
+ * معالج ضغطات الأزرار للبوت (Banner Actions)
  * @param {import('discord.js').ButtonInteraction} interaction 
  * @param {string} apiKey 
  */
 export async function handleButtonInteraction(interaction, apiKey) {
   const customId = interaction.customId;
+  const { action, term } = parseBannerCustomId(customId);
 
-  // --- BANNER BUTTONS ---
-  if (customId.startsWith('banner_')) {
-    const { action, term } = parseBannerCustomId(customId);
-
-    // 1. "📌 Save" Banner
-    if (action === 'banner_save') {
-      await interaction.deferReply({ ephemeral: true });
-
-      try {
-        const messageEmbed = interaction.message.embeds?.[0];
-        const bannerUrl = messageEmbed?.image?.url;
-        const bannerTitle = messageEmbed?.title || 'Saved Animated Banner';
-
-        if (!bannerUrl) {
-          await interaction.editReply({
-            content: '⚠️ Could not find a banner image in this message to save.'
-          });
-          return;
-        }
-
-        const dmEmbed = new EmbedBuilder()
-          .setTitle(`📌 Saved Banner: ${bannerTitle}`)
-          .setURL(messageEmbed.url || bannerUrl)
-          .setImage(bannerUrl)
-          .setColor(0x5865f2)
-          .setDescription(`Saved from **${interaction.guild?.name || 'Discord'}** in <#${interaction.channelId}>`)
-          .setFooter({ text: 'Saved via Animated Banner Bot' })
-          .setTimestamp();
-
-        await interaction.user.send({ embeds: [dmEmbed] });
-
-        await interaction.editReply({
-          content: '✅ This Animated Banner has been sent directly to your DMs!'
-        });
-      } catch (err) {
-        console.warn(`Failed to DM user ${interaction.user.tag}:`, err.message);
-        await interaction.editReply({
-          content: '❌ Could not send you a DM! Please make sure your server privacy settings allow Direct Messages from server members.'
-        });
-      }
-      return;
-    }
-
-    // 2. "🔄 Another Banner"
-    if (action === 'banner_another') {
-      await interaction.deferUpdate();
-
-      const targetTerm = term || 'aesthetic banner';
-      const bannerData = await getSmartBanner(apiKey, targetTerm);
-      const newEmbed = createBannerEmbed(bannerData, interaction.user);
-      const newRow = createBannerActionRow(targetTerm, interaction.user.id);
-
-      await interaction.editReply({
-        embeds: [newEmbed],
-        components: [newRow]
-      });
-      return;
-    }
-
-    // 3. "🎲 Surprise Banner"
-    if (action === 'banner_surprise') {
-      await interaction.deferUpdate();
-
-      const bannerData = await getSurpriseBanner(apiKey);
-      const newEmbed = createBannerEmbed(bannerData, interaction.user);
-      const newRow = createBannerActionRow('surprise banner', interaction.user.id);
-
-      await interaction.editReply({
-        embeds: [newEmbed],
-        components: [newRow]
-      });
-      return;
-    }
-    return;
-  }
-
-  // --- GIF BUTTONS ---
-  const { action, term } = parseCustomId(customId);
-
-  // 1. "📌 Save" GIF
-  if (action === 'save') {
+  // 1. زر حفظ البانر في الخاص (Save to DM)
+  if (action === 'banner_save' || action === 'save') {
     await interaction.deferReply({ ephemeral: true });
 
     try {
       const messageEmbed = interaction.message.embeds?.[0];
-      const gifUrl = messageEmbed?.image?.url;
-      const gifTitle = messageEmbed?.title || 'Saved GIF';
+      const bannerUrl = messageEmbed?.image?.url;
+      const bannerTitle = messageEmbed?.title || 'Saved Animated Banner';
 
-      if (!gifUrl) {
+      if (!bannerUrl) {
         await interaction.editReply({
-          content: '⚠️ Could not find a GIF image in this message to save.'
+          content: '⚠️ Could not find a banner image in this message to save.'
         });
         return;
       }
 
       const dmEmbed = new EmbedBuilder()
-        .setTitle(`📌 Saved: ${gifTitle}`)
-        .setURL(messageEmbed.url || gifUrl)
-        .setImage(gifUrl)
+        .setTitle(`📌 Saved Banner: ${bannerTitle}`)
+        .setURL(messageEmbed.url || bannerUrl)
+        .setImage(bannerUrl)
         .setColor(0x5865f2)
         .setDescription(`Saved from **${interaction.guild?.name || 'Discord'}** in <#${interaction.channelId}>`)
-        .setFooter({ text: 'Saved via Giphy Bot' })
+        .setFooter({ text: 'Saved via Discord Banner Bot' })
         .setTimestamp();
 
       await interaction.user.send({ embeds: [dmEmbed] });
 
       await interaction.editReply({
-        content: '✅ This GIF has been sent to your Direct Messages (DMs)!'
+        content: '✅ تم إرسال البانر المتحرك إلى رسائلك الخاصة (DMs) بنجاح!'
       });
     } catch (err) {
       console.warn(`Failed to DM user ${interaction.user.tag}:`, err.message);
       await interaction.editReply({
-        content: '❌ Could not send you a DM! Please make sure your server privacy settings allow Direct Messages from server members.'
+        content: '❌ تعذر إرسال رسالة خاصة لك! يرجى التأكد من السماح بالرسائل الخاصة في إعدادات خصوصية السيرفر.'
       });
     }
     return;
   }
 
-  // 2. "🔄 Another One" GIF
-  if (action === 'another') {
+  // 2. زر جلب بانر آخر لنفس الموضوع (Another Banner)
+  if (action === 'banner_another' || action === 'another') {
     await interaction.deferUpdate();
 
-    const targetTerm = term || 'random';
-    const gifData = await getSmartGif(apiKey, targetTerm);
-    const newEmbed = createGifEmbed(gifData, interaction.user);
-    const newRow = createGifActionRow(targetTerm, interaction.user.id);
+    const targetTerm = term || 'anime';
+    const bannerData = await getSmartBanner(apiKey, targetTerm);
+    const newEmbed = createBannerEmbed(bannerData, interaction.user);
+    const newRow = createBannerActionRow(targetTerm, interaction.user.id);
 
     await interaction.editReply({
       embeds: [newEmbed],
@@ -146,17 +66,13 @@ export async function handleButtonInteraction(interaction, apiKey) {
     return;
   }
 
-  // 3. "🎲 Surprise Me" GIF
-  if (action === 'surprise') {
+  // 3. زر بانر عشوائي مفاجئ (Surprise Banner)
+  if (action === 'banner_surprise' || action === 'surprise') {
     await interaction.deferUpdate();
 
-    let gifData = await getTrendingGif(apiKey);
-    if (!gifData) {
-      gifData = await getSmartGif(apiKey, 'random surprise');
-    }
-
-    const newEmbed = createGifEmbed(gifData, interaction.user);
-    const newRow = createGifActionRow('trending', interaction.user.id);
+    const bannerData = await getSurpriseBanner(apiKey);
+    const newEmbed = createBannerEmbed(bannerData, interaction.user);
+    const newRow = createBannerActionRow('surprise', interaction.user.id);
 
     await interaction.editReply({
       embeds: [newEmbed],

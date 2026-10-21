@@ -5,17 +5,17 @@ import { createBannerEmbed, createBannerActionRow } from '../utils/bannerEmbed.j
 export const bannerCommand = {
   data: new SlashCommandBuilder()
     .setName('banner')
-    .setDescription('Find and display wide animated landscape banners using Giphy')
+    .setDescription('Find and display wide animated Discord landscape banners')
     .addStringOption(option =>
       option
         .setName('search_term')
-        .setDescription('Enter a theme, anime, aesthetic, or keyword (e.g. cyberpunk, lofi, naruto)')
+        .setDescription('Enter a theme, anime, aesthetic, or keyword (e.g. anime, cyberpunk, lofi)')
         .setRequired(true)
         .setMaxLength(100)
     ),
 
   /**
-   * Executes the /banner slash command
+   * تنفيذ أمر /banner
    * @param {import('discord.js').ChatInputCommandInteraction} interaction 
    * @param {string} apiKey 
    */

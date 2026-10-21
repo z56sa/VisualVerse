@@ -1,7 +1,7 @@
 import http from 'http';
 import { Client, GatewayIntentBits, Collection } from 'discord.js';
 import dotenv from 'dotenv';
-import { gifCommand } from './commands/gif.js';
+import { bannerCommand } from './commands/banner.js';
 import { handleButtonInteraction } from './handlers/buttonHandler.js';
 
 dotenv.config();
@@ -37,15 +37,15 @@ const client = new Client({
   ]
 });
 
-// Setup commands collection focused on GIFs
+// Setup commands collection focused strictly on Banner
 client.commands = new Collection();
-client.commands.set(gifCommand.data.name, gifCommand);
+client.commands.set(bannerCommand.data.name, bannerCommand);
 
 // Ready event
 client.once('ready', (readyClient) => {
   console.log(`🤖 Logged in as ${readyClient.user.tag}!`);
-  console.log(`🌟 GIF Bot ready to deliver unlimited GIFs.`);
-  readyClient.user.setActivity('/gif [search_term]', { type: 2 });
+  console.log(`🌟 Discord Animated Banner Bot ready.`);
+  readyClient.user.setActivity('/banner [search_term]', { type: 2 });
 });
 
 // Interaction listener
@@ -72,7 +72,7 @@ client.on('interactionCreate', async (interaction) => {
     console.error('Error handling interaction:', error);
 
     const errorMessage = {
-      content: '❌ There was an error while processing your request. Please try again!',
+      content: '❌ حدث خطأ أثناء معالجة الطلب، يرجى المحاولة مرة أخرى!',
       ephemeral: true
     };
 

@@ -6,7 +6,7 @@ import {
 } from 'discord.js';
 
 /**
- * بناء رسالة Embed مخصصة بالكامل لاستعراض البانر الأفقي العريض
+ * تصميم رسالة Embed لعرض البانر العريض لبروفايل وسيرفر الديسكورد
  * @param {Object} bannerData 
  * @param {import('discord.js').User} user 
  * @returns {EmbedBuilder}
@@ -15,8 +15,8 @@ export function createBannerEmbed(bannerData, user) {
   const embed = new EmbedBuilder()
     .setTitle(bannerData.title.length > 250 ? `${bannerData.title.substring(0, 247)}...` : bannerData.title)
     .setURL(bannerData.giphyUrl)
-    .setImage(bannerData.url) // يعرض البانر العريض في المنتصف بحجم كامل
-    .setColor(0x5865f2) // لون ديسكورد المميز (Blurple)
+    .setImage(bannerData.url) // يعرض البانر بشكل أفقي عريض
+    .setColor(0x5865f2) // لون ديسكورد المميز
     .setFooter({
       text: `Discord Banner (${bannerData.dimensions || 'Wide'}) • Requested by ${user.username}`,
       iconURL: user.displayAvatarURL()
@@ -24,18 +24,18 @@ export function createBannerEmbed(bannerData, user) {
     .setTimestamp();
 
   if (bannerData.source === 'surprise') {
-    embed.setDescription('🎲 **بانر عريض عشوائي (Discord Profile / Server Banner)**');
+    embed.setDescription('🎲 **بانر ديسكورد متحرك عشوائي (Random Discord Banner)**');
   } else if (bannerData.source === 'fallback') {
     embed.setDescription(`🎨 **بانر عريض بديل لـ:** \`${bannerData.displayTerm}\``);
   } else {
-    embed.setDescription(`🖼️ **بانر ديسكورد متحرك لـ:** **${bannerData.displayTerm}**`);
+    embed.setDescription(`🖼️ **بانر ديسكورد عريض لـ:** **${bannerData.displayTerm}**`);
   }
 
   return embed;
 }
 
 /**
- * تشفير المعرف المخصص للأزرار بأمان تحت حد 100 حرف
+ * تشفير معرف الأزرار
  * @param {string} action 
  * @param {string} term 
  * @param {string} userId 
@@ -47,7 +47,7 @@ export function buildBannerCustomId(action, term, userId) {
 }
 
 /**
- * فك تشفير المعرف المخصص
+ * فك تشفير معرف الأزرار
  * @param {string} customId 
  * @returns {{ action: string, userId: string, term: string }}
  */
@@ -61,7 +61,7 @@ export function parseBannerCustomId(customId) {
 }
 
 /**
- * إنشاء أزرار التحكم الخاصة بالبانرات
+ * أزرار التحكم في البانر
  * @param {string} term 
  * @param {string} userId 
  * @returns {ActionRowBuilder<ButtonBuilder>}

@@ -3,43 +3,38 @@ import axios from 'axios';
 const GIPHY_BASE_URL = 'https://api.giphy.com/v1/gifs';
 
 /**
- * Strict Aspect Ratio Threshold for Banners:
- * Standard Discord profile/server banners are 16:9 (1.77) or wider (~2.5 to 3.0).
- * Threshold >= 1.7 completely filters out regular square/portrait GIFs.
+ * فلترة رياضية صارمة جداً للبانرات العريضة فقط
+ * ترفض أي صورة إذا كان عرضها أقل من 1.75 ضعف ارتفاعها
+ * (تمنع الصور المربعة والشبه مربعة والصور العمودية نهائياً)
  */
-const MIN_BANNER_ASPECT_RATIO = 1.7;
+const MIN_BANNER_RATIO = 1.75;
 
 /**
- * High-intent banner search terms to force Giphy to return true horizontal landscape banners
+ * قوالب بحث متخصصة في جلب البانرات المتحركة لبروفايلات وسيرفرات ديسكورد
  */
-const BANNER_SPECIALIZED_KEYWORDS = [
-  'banner aesthetic',
-  'discord banner',
-  'profile banner',
-  'header landscape',
-  'wide banner',
-  'anime banner gif',
-  'landscape header'
+const BANNER_QUERY_TEMPLATES = [
+  query => `${query} discord banner gif`,
+  query => `${query} banner gif`,
+  query => `${query} header landscape gif`,
+  query => `${query} wide header gif`
 ];
 
 /**
- * Curated ultra-wide aesthetic banner themes
+ * مكتبة بانرات ديسكورد عريضة وجمالية جاهزة في حال كان البحث نادراً جداً
  */
-const CURATED_BANNER_COLLECTIONS = [
-  'lofi anime banner',
-  'cyberpunk city banner',
-  'aesthetic landscape banner',
-  'pixel art banner',
-  'retrowave synthwave banner',
-  'galaxy space banner',
-  'nature sunset banner',
-  'japanese aesthetic banner',
-  'chill vibes banner',
-  'dark aesthetic header'
+const CURATED_DISCORD_BANNERS = [
+  'anime discord banner gif',
+  'lofi anime banner gif',
+  'cyberpunk banner landscape',
+  'pixel art banner gif',
+  'aesthetic discord header gif',
+  'retrowave synthwave banner gif',
+  'galaxy space banner landscape',
+  'japan aesthetic banner gif'
 ];
 
 /**
- * Helper to pick a random item from an array
+ * اختيار عشوائي من مصفوفة
  * @param {Array} array 
  * @returns {*}
  */
@@ -49,35 +44,28 @@ function pickRandom(array) {
 }
 
 /**
- * فلترة رياضية صارمة جداً: ترفض أي GIF عادي، مربع، أو عمودي،
- * وتقبل فقط البانرات الحقيقية العريضة جداً (عرض / ارتفاع >= 1.7)
+ * فحص نسبة الأبعاد لضمان أنها بانر أفقي عريض حقيقي
  * @param {Object} item 
  * @returns {boolean}
  */
-export function isStrictBanner(item) {
-  const width = parseFloat(item.media_formats?.gif?.dims?.[0] || item.images?.original?.width || 0);
-  const height = parseFloat(item.media_formats?.gif?.dims?.[1] || item.images?.original?.height || 1);
+export function isRealWideBanner(item) {
+  const original = item?.images?.original;
+  if (!original) return false;
+
+  const width = parseFloat(original.width);
+  const height = parseFloat(original.height);
 
   if (!width || !height || isNaN(width) || isNaN(height) || height <= 0) {
     return false;
   }
 
-  const aspectRatio = width / height;
-  return aspectRatio >= MIN_BANNER_ASPECT_RATIO;
+  // العرض يجب أن يكون على الأقل 1.75 ضعف الارتفاع
+  const ratio = width / height;
+  return ratio >= MIN_BANNER_RATIO;
 }
 
 /**
- * تطبيق الفلترة الصارمة على النتائج
- * @param {Array} items 
- * @returns {Array}
- */
-export function filterStrictBanners(items) {
-  if (!Array.isArray(items)) return [];
-  return items.filter(isStrictBanner);
-}
-
-/**
- * توحيد هيكل بيانات البانر لـ Discord Embed
+ * تنسيق بيانات البانر لرسالة Embed
  * @param {Object} item 
  * @param {string} source 
  * @param {string} displayTerm 
@@ -89,11 +77,10 @@ function formatBannerResponse(item, source, displayTerm) {
   const bannerUrl = item.images?.original?.url ||
                     item.images?.downsized_large?.url ||
                     item.images?.downsized_medium?.url ||
-                    item.media_formats?.gif?.url ||
                     item.url;
 
-  const width = parseFloat(item.media_formats?.gif?.dims?.[0] || item.images?.original?.width || 0);
-  const height = parseFloat(item.media_formats?.gif?.dims?.[1] || item.images?.original?.height || 1);
+  const width = Math.round(parseFloat(item.images?.original?.width || 0));
+  const height = Math.round(parseFloat(item.images?.original?.height || 0));
   const ratio = (width / height).toFixed(2);
 
   return {
@@ -101,7 +88,7 @@ function formatBannerResponse(item, source, displayTerm) {
     title: item.title && item.title.trim().length > 0 ? item.title.trim() : 'Discord Animated Banner',
     url: bannerUrl,
     giphyUrl: item.url || 'https://giphy.com',
-    dimensions: `${Math.round(width)}x${Math.round(height)}`,
+    dimensions: width && height ? `${width}x${height}` : 'Wide Banner',
     ratio: isNaN(ratio) ? 'Wide' : ratio,
     source,
     displayTerm
@@ -109,50 +96,36 @@ function formatBannerResponse(item, source, displayTerm) {
 }
 
 /**
- * جلب بانر عريض عشوائي ومفاجئ
+ * جلب بانر مفاجئ عشوائي
  * @param {string} apiKey 
  * @returns {Promise<Object>}
  */
 export async function getSurpriseBanner(apiKey) {
-  const randomTheme = pickRandom(CURATED_BANNER_COLLECTIONS);
+  const randomTheme = pickRandom(CURATED_DISCORD_BANNERS);
   return getSmartBanner(apiKey, randomTheme, true);
 }
 
 /**
- * محرك البحث المتخصص حصراً في البانرات العريضة (Banners Only Engine)
+ * المحرك الرئيسي للبحث عن البانرات العريضة فقط
  * @param {string} apiKey 
- * @param {string} query - مصطلح البحث
+ * @param {string} query 
  * @param {boolean} isSurprise 
  * @returns {Promise<Object>}
  */
 export async function getSmartBanner(apiKey, query, isSurprise = false) {
-  const rawTerm = query ? query.trim() : 'aesthetic';
-
-  // 1. صياغة كلمات بحث تركز كلياً على البانر وHeader الديسكورد
-  const lowerQuery = rawTerm.toLowerCase();
-  let searchQueries = [];
-
-  if (lowerQuery.includes('banner') || lowerQuery.includes('header')) {
-    searchQueries = [rawTerm, `${rawTerm} discord`, `${rawTerm} landscape`];
-  } else {
-    searchQueries = [
-      `${rawTerm} discord banner`,
-      `${rawTerm} banner`,
-      `${rawTerm} header landscape`,
-      `${rawTerm} wide header`
-    ];
-  }
+  const rawTerm = query ? query.trim() : 'anime';
 
   if (apiKey && apiKey.trim().length > 0) {
-    // المحاولة بالصيغ المخصصة للبانرات
-    for (const searchQuery of searchQueries) {
+    // نجرب صياغات البحث المتخصصة في البانرات
+    for (const template of BANNER_QUERY_TEMPLATES) {
+      const q = template(rawTerm);
       try {
         const offset = Math.floor(Math.random() * 15);
         const response = await axios.get(`${GIPHY_BASE_URL}/search`, {
           params: {
             api_key: apiKey,
-            q: searchQuery,
-            limit: 50, // جلب حزمة كبيرة من 50 نتيجة
+            q,
+            limit: 50, // جلب 50 نتيجة لفحص واختيار البانرات الأفقية الحقيقية
             offset,
             rating: 'pg-13',
             lang: 'en'
@@ -162,25 +135,25 @@ export async function getSmartBanner(apiKey, query, isSurprise = false) {
 
         const results = response.data?.data;
         if (Array.isArray(results) && results.length > 0) {
-          // تطبيق شرط البانر الصارم (aspectRatio >= 1.7)
-          const validBanners = filterStrictBanners(results);
-          if (validBanners.length > 0) {
-            const selected = pickRandom(validBanners);
-            return formatBannerResponse(selected, isSurprise ? 'surprise' : 'custom_search', rawTerm);
+          // فلترة صارمة: فقط البانرات التي عرضها >= 1.75 من ارتفاعها
+          const wideBanners = results.filter(isRealWideBanner);
+          if (wideBanners.length > 0) {
+            const selected = pickRandom(wideBanners);
+            return formatBannerResponse(selected, isSurprise ? 'surprise' : 'search', rawTerm);
           }
         }
       } catch (err) {
-        console.warn(`Query "${searchQuery}" failed:`, err.message);
+        console.warn(`Query for banner failed:`, err.message);
       }
     }
 
-    // 2. إذا لم يعثر على بانر يطابق الكلمة الدقيقة مع نسبة 1.7، يجلب بانر من المجموعات العريضة الجمالية
+    // إذا لم يعثر على بانر يطابق الكلمة بالنسبة الصارمة، يجلب بانر جمالي بديل من المكتبة
     try {
-      const fallbackCollection = pickRandom(CURATED_BANNER_COLLECTIONS);
-      const fallbackResponse = await axios.get(`${GIPHY_BASE_URL}/search`, {
+      const fallbackQuery = pickRandom(CURATED_DISCORD_BANNERS);
+      const fallbackRes = await axios.get(`${GIPHY_BASE_URL}/search`, {
         params: {
           api_key: apiKey,
-          q: fallbackCollection,
+          q: fallbackQuery,
           limit: 50,
           offset: Math.floor(Math.random() * 10),
           rating: 'pg-13'
@@ -188,20 +161,20 @@ export async function getSmartBanner(apiKey, query, isSurprise = false) {
         timeout: 7000
       });
 
-      const fallbackResults = fallbackResponse.data?.data;
+      const fallbackResults = fallbackRes.data?.data;
       if (Array.isArray(fallbackResults) && fallbackResults.length > 0) {
-        const validFallbacks = filterStrictBanners(fallbackResults);
-        if (validFallbacks.length > 0) {
-          const selected = pickRandom(validFallbacks);
-          return formatBannerResponse(selected, 'fallback', fallbackCollection);
+        const validWide = fallbackResults.filter(isRealWideBanner);
+        if (validWide.length > 0) {
+          const selected = pickRandom(validWide);
+          return formatBannerResponse(selected, 'fallback', fallbackQuery.replace(' discord banner gif', ''));
         }
       }
-    } catch (fallbackErr) {
-      console.warn('Fallback banner collection query failed:', fallbackErr.message);
+    } catch (e) {
+      console.warn('Fallback banner search error:', e.message);
     }
   }
 
-  // 3. بانر طوارئ ألترا وايد عالي الدقة (نسبة 2.5: 1000x400)
+  // بانر طوارئ ألترا وايد عالي الدقة (نسبة 2.5)
   return {
     id: 'emergency-banner',
     title: 'Aesthetic Cyber Cityscape Banner',
