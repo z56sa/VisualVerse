@@ -1,0 +1,20 @@
+{
+  "name": "giphy-discord-bot",
+  "version": "1.0.0",
+  "description": "Production-ready Discord GIF bot using Giphy API with zero-failure fallbacks and interactive buttons.",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "deploy-commands": "node src/deploy-commands.js",
+    "build": "npm run deploy-commands"
+  },
+  "keywords": ["discord", "bot", "giphy", "gif", "discordjs"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.7"
+  }
+}
