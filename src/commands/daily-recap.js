@@ -6,24 +6,15 @@ import { loadFeedsConfig } from '../services/storageService.js';
 export const dailyRecapCommand = {
   data: new SlashCommandBuilder()
     .setName('daily-recap')
-    .setDescription('Generate a smart AI daily news summary | توليد ملخص ذكي لأبرز أخبار اليوم')
-    .addStringOption(option =>
-      option
-        .setName('language')
-        .setDescription('Choose summary language | اختر لغة الملخص')
-        .addChoices(
-          { name: '🇸🇦 العربية (Arabic)', value: 'ar' },
-          { name: '🇺🇸 English', value: 'en' }
-        )
-    ),
+    .setDescription('Generate a smart AI daily news summary | توليد ملخص ذكي لأبرز أخبار اليوم'),
 
   async execute(interaction, geminiApiKey) {
     await interaction.deferReply();
 
-    const selectedLang = interaction.options.getString('language');
     const config = loadFeedsConfig();
     const guildConfig = config[interaction.guildId];
-    const lang = selectedLang || guildConfig?.language || 'ar';
+    // اللغة تعتمد حصراً على لغة السيرفر المحددة في أمر /set-language (الافتراضي: عربي)
+    const lang = guildConfig?.language || 'ar';
     const isArabic = lang === 'ar';
 
     const feedsToScan = (guildConfig && guildConfig.feeds?.length > 0)
@@ -33,7 +24,6 @@ export const dailyRecapCommand = {
     try {
       const allNews = [];
 
-      // جلب أخبار من أول 3 مصادر (2 خبر من كل مصدر = 6 أخبار)
       for (const url of feedsToScan.slice(0, 3)) {
         try {
           const feed = await fetchFeedItems(url, 2);
@@ -58,11 +48,10 @@ export const dailyRecapCommand = {
         return;
       }
 
-      // إشعار المستخدم بأن الذكاء الاصطناعي يعمل
       await interaction.editReply({
         content: isArabic
-          ? `🤖 **جاري تحليل ${allNews.length} خبر وتلخيصهم بالذكاء الاصطناعي...**`
-          : `🤖 **Analyzing ${allNews.length} news items with AI...**`
+          ? `🤖 **جاري تحليل وتلخيص ${allNews.length} أخبار بالذكاء الاصطناعي...**`
+          : `🤖 **Analyzing and summarizing ${allNews.length} news stories with AI...**`
       });
 
       const recapText = await generateDailyRecapWithLang(geminiApiKey, allNews, lang);

@@ -17,25 +17,16 @@ export const latestNewsCommand = {
           { name: '💻 Tech — تكنولوجيا (The Verge)', value: 'tech' },
           { name: '🌸 Anime — أنمي (ANN)', value: 'anime' }
         )
-    )
-    .addStringOption(option =>
-      option
-        .setName('language')
-        .setDescription('Summary language | لغة التلخيص')
-        .addChoices(
-          { name: '🇸🇦 العربية (Arabic)', value: 'ar' },
-          { name: '🇺🇸 English', value: 'en' }
-        )
     ),
 
   async execute(interaction, geminiApiKey) {
     await interaction.deferReply();
 
     const category = interaction.options.getString('category');
-    const selectedLang = interaction.options.getString('language');
     const config = loadFeedsConfig();
     const guildConfig = config[interaction.guildId];
-    const lang = selectedLang || guildConfig?.language || 'ar';
+    // اللغة تعتمد حصراً على لغة السيرفر المحددة عبر /set-language (الافتراضي: عربي)
+    const lang = guildConfig?.language || 'ar';
     const isArabic = lang === 'ar';
 
     let targetFeedUrl = null;

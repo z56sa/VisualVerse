@@ -19,15 +19,6 @@ export const setupFeedCommand = {
         .setName('url')
         .setDescription('RSS feed URL (gaming, anime, tech...) | رابط خلاصة RSS')
         .setRequired(true)
-    )
-    .addStringOption(option =>
-      option
-        .setName('language')
-        .setDescription('Summary language | لغة التلخيص')
-        .addChoices(
-          { name: '🇸🇦 العربية (Arabic)', value: 'ar' },
-          { name: '🇺🇸 English', value: 'en' }
-        )
     ),
 
   async execute(interaction) {
@@ -35,20 +26,20 @@ export const setupFeedCommand = {
 
     const channel = interaction.options.getChannel('channel', true);
     const feedUrl = interaction.options.getString('url', true).trim();
-    const language = interaction.options.getString('language') || 'ar';
     const guildId = interaction.guildId;
+
+    const config = loadFeedsConfig();
+    const language = config[guildId]?.language || 'ar';
     const isArabic = language === 'ar';
 
     try {
       const feedData = await fetchFeedItems(feedUrl, 1);
 
-      const config = loadFeedsConfig();
       if (!config[guildId]) {
         config[guildId] = { channelId: channel.id, language, feeds: [], lastPostedUrls: [] };
       }
 
       config[guildId].channelId = channel.id;
-      config[guildId].language = language;
       if (!config[guildId].feeds.includes(feedUrl)) {
         config[guildId].feeds.push(feedUrl);
       }
@@ -65,7 +56,7 @@ export const setupFeedCommand = {
             inline: true
           },
           {
-            name: isArabic ? '🗣️ اللغة' : '🗣️ Language',
+            name: isArabic ? '🗣️ لغة السيرفر' : '🗣️ Server Language',
             value: isArabic ? 'العربية 🇸🇦' : 'English 🇺🇸',
             inline: true
           },
@@ -82,8 +73,8 @@ export const setupFeedCommand = {
         )
         .setDescription(
           isArabic
-            ? '⚡ سيبدأ البوت بمراقبة المصدر تلقائياً وتلخيص الأخبار الجديدة فور صدورها!'
-            : '⚡ The bot will now monitor this feed and automatically summarize new articles!'
+            ? '⚡ سيبدأ البوت بمراقبة المصدر تلقائياً وتلخيص الأخبار الجديدة فور صدورها بلغة السيرفر المحددة!'
+            : '⚡ The bot will now monitor this feed and automatically summarize new articles in the server language!'
         )
         .setFooter({ text: 'FeedPulse • Auto News Aggregator' })
         .setTimestamp();
