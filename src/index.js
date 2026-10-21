@@ -49,10 +49,25 @@ client.commands.set(dailyRecapCommand.data.name, dailyRecapCommand);
 client.commands.set(setLanguageCommand.data.name, setLanguageCommand);
 
 // ─── Ready Event & Background Poller ─────────────────────────────────────────
-client.once('clientReady', readyClient => {
+client.once('clientReady', async readyClient => {
   console.log(`🤖 Logged in as ${readyClient.user.tag}!`);
   console.log('⚡ FeedPulse AI News Aggregator Bot is active & running.');
   readyClient.user.setActivity('📰 تلخيص الأخبار بالذكاء الاصطناعي', { type: 3 }); // Watching
+
+  // تسجيل وتحديث الـ Slash Commands تلقائياً ومباشرة عبر البوت نفسه فور تشغيله
+  try {
+    console.log('🔄 Auto-registering Slash Commands directly via Client...');
+    const commandsData = [
+      setupFeedCommand.data.toJSON(),
+      latestNewsCommand.data.toJSON(),
+      dailyRecapCommand.data.toJSON(),
+      setLanguageCommand.data.toJSON()
+    ];
+    await readyClient.application.commands.set(commandsData);
+    console.log('✅ All Slash Commands registered successfully with Discord API!');
+  } catch (regError) {
+    console.error('⚠️ Could not auto-register commands via client:', regError.message);
+  }
 
   // فحص الخلاصات التلقائي فور تشغيل البوت
   checkFeedsAndBroadcast(client, GEMINI_API_KEY);
