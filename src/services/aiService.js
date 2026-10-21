@@ -1,63 +1,82 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+/**
+ * محرك الذكاء الاصطناعي FeedPulse AI
+ * يدعم كلا اللغتين (العربية 🇸🇦 والإنجليزية 🇺🇸) بشكل كامل ومباشر.
+ * يتصل بـ Google Gemini API مع اكتشاف تلقائي للموديلات الفعالة والترجمة الفورية المزدوجة.
+ */
 
-let genAI = null;
-
-function getAIClient(apiKey) {
-  if (!apiKey || apiKey.trim().length === 0) return null;
-  if (!genAI) {
-    genAI = new GoogleGenerativeAI(apiKey.trim());
-  }
-  return genAI;
-}
+let cachedWorkingModel = null;
 
 /**
- * دالة مجانية وسريعة جداً للترجمة المباشرة للعربية والإنجليزية دون الحاجة لأي مفتاح
+ * جلب قائمة الموديلات الصالحة تلقائياً لمفتاح الـ API الممرر
  */
-async function freeTranslateText(text, targetLang = 'ar') {
-  if (!text || text.trim().length === 0) return text;
+async function discoverWorkingModel(apiKey) {
+  if (cachedWorkingModel) return cachedWorkingModel;
+  if (!apiKey || apiKey.trim().length === 0) return null;
+
   try {
-    const sl = targetLang === 'ar' ? 'auto' : 'ar';
-    const tl = targetLang === 'ar' ? 'ar' : 'en';
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
-    const res = await fetch(url);
-    if (!res.ok) return text;
-    const data = await res.json();
-    if (data && data[0]) {
-      const translated = data[0].map(segment => segment[0]).join('');
-      return translated.trim() || text;
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey.trim()}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.models)) {
+        // البحث عن أفضل موديل يدعم generateContent
+        const validModel = data.models.find(m => 
+          m.supportedGenerationMethods?.includes('generateContent') &&
+          (m.name.includes('flash') || m.name.includes('gemini'))
+        );
+        if (validModel) {
+          // إزالة بادئة "models/" إذا وُجدت
+          cachedWorkingModel = validModel.name.replace(/^models\//, '');
+          console.log(`[FeedPulse AI] ✅ Discovered active Gemini model: ${cachedWorkingModel}`);
+          return cachedWorkingModel;
+        }
+      }
     }
   } catch (err) {
-    console.warn('[Translate] Fallback error:', err.message);
+    console.warn('[FeedPulse AI] Model auto-discovery warning:', err.message);
   }
-  return text;
+
+  // افتراضيات حديثة متوافقة
+  return 'gemini-1.5-flash';
 }
 
 /**
- * محاولة استدعاء Gemini مع تجربة الموديلات المتوفرة
+ * إرسال طلب توليد محتوى مباشر للـ Gemini REST API لضمان عدم وجود أخطاء في الـ SDK
  */
-async function callGeminiWithFallback(apiKey, prompt) {
-  const ai = getAIClient(apiKey);
-  if (!ai) return null;
+async function requestGemini(apiKey, prompt) {
+  if (!apiKey || apiKey.trim().length === 0) return null;
 
-  // تجربة الموديلات بالترتيب الصحيح المتوافق مع v1beta و v1
-  const modelsToTry = [
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-flash-latest',
-    'gemini-1.5-pro',
-    'gemini-1.5-pro-latest'
-  ];
+  const model = await discoverWorkingModel(apiKey);
+  const modelsToTry = [model, 'gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-pro'].filter(Boolean);
+  const uniqueModels = [...new Set(modelsToTry)];
 
-  for (const modelName of modelsToTry) {
+  for (const m of uniqueModels) {
     try {
-      const model = ai.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const text = result?.response?.text();
-      if (text && text.trim().length > 0) {
-        return text.trim();
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey.trim()}`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: prompt }]
+            }
+          ]
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text && text.trim().length > 0) {
+          cachedWorkingModel = m;
+          return text.trim();
+        }
+      } else {
+        const errJson = await response.json().catch(() => ({}));
+        console.warn(`[FeedPulse AI] Model ${m} returned HTTP ${response.status}:`, errJson?.error?.message || response.statusText);
       }
-    } catch (err) {
-      // نتجاهل الخطأ ونجرب الموديل التالي
+    } catch (e) {
+      console.warn(`[FeedPulse AI] Model ${m} network error:`, e.message);
     }
   }
 
@@ -65,91 +84,115 @@ async function callGeminiWithFallback(apiKey, prompt) {
 }
 
 /**
- * تلخيص ومعالجة الخبر باللغتين العربية أو الإنجليزية
+ * محرك ترجمة مدمج وسريع لضمان ترجمة النصوص للغتين حتى في حال انقطاع الذكاء الاصطناعي
+ */
+async function translateText(text, targetLang = 'ar') {
+  if (!text || text.trim().length === 0) return text;
+  try {
+    const sl = targetLang === 'ar' ? 'auto' : 'ar';
+    const tl = targetLang === 'ar' ? 'ar' : 'en';
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data[0]) {
+        return data[0].map(s => s[0]).join('').trim() || text;
+      }
+    }
+  } catch (err) {
+    // ignore
+  }
+  return text;
+}
+
+/**
+ * تلخيص ومعالجة الخبر بالذكاء الاصطناعي باللغتين (عربي / إنجليزي)
+ * @param {string} apiKey 
+ * @param {string} title 
+ * @param {string} content 
+ * @param {'ar' | 'en'} lang 
  */
 export async function summarizeNewsItem(apiKey, title, content, lang = 'ar') {
   const isArabic = lang === 'ar';
-  const cleanContent = (content || '').replace(/<[^>]*>/g, '').trim().slice(0, 400);
+  const cleanContent = (content || '').replace(/<[^>]*>/g, '').trim().slice(0, 500);
 
-  // 1. محاولة الذكاء الاصطناعي أولاً
-  if (apiKey && apiKey.trim().length > 0) {
-    const prompt = isArabic
-      ? `أنت محرر إخباري محترف لبوت FeedPulse على ديسكورد.
-المطلوب:
-1. صياغة عنوان عربي ملفت وجذاب لهذا الخبر.
-2. تلخيص الخبر في 3 نقاط محددة ومفيدة باللغة العربية حصراً.
+  // 1. محاولة الذكاء الاصطناعي AI
+  const prompt = isArabic
+    ? `أنت محرر إخباري محترف لبوت FeedPulse.
+المهمة:
+1. قم بترجمة وصياغة عنوان عربي شيق وجذاب لهذا الخبر.
+2. لخص الخبر في 3 نقاط ذكية وموجزة باللغة العربية الفصحى فقط.
 
-العنوان: ${title}
-المحتوى: ${cleanContent || 'لا يوجد'}
+عنوان الخبر: ${title}
+تفاصيل الخبر: ${cleanContent || 'لا يوجد'}
 
-الإخراج بهذا التنسيق تماماً:
+التنسيق المطلوب بالضبط:
 العنوان: [العنوان بالعربية]
 - [النقطة 1]
 - [النقطة 2]
 - [النقطة 3]`
-      : `You are a professional news editor for the FeedPulse Discord bot.
+    : `You are a professional news editor for the FeedPulse bot.
 Task:
-1. Create a catchy English headline.
-2. Summarize the news into 3 crisp bullet points in English.
+1. Craft an engaging English headline for this news story.
+2. Summarize the story into 3 concise and impactful bullet points in English.
 
-Title: ${title}
-Content: ${cleanContent || 'None'}
+News Title: ${title}
+Details: ${cleanContent || 'None'}
 
-Strict Output format:
-Title: [Catchy English title]
+Strict Output Format:
+Title: [Catchy English Title]
 - [Point 1]
 - [Point 2]
 - [Point 3]`;
 
-    const responseText = await callGeminiWithFallback(apiKey, prompt);
+  const aiResponse = await requestGemini(apiKey, prompt);
 
-    if (responseText) {
-      const lines = responseText.split('\n').map(l => l.trim()).filter(Boolean);
-      let formattedTitle = title;
-      const summaryPoints = [];
+  if (aiResponse) {
+    const lines = aiResponse.split('\n').map(l => l.trim()).filter(Boolean);
+    let formattedTitle = title;
+    const summaryPoints = [];
 
-      for (const line of lines) {
-        if (line.startsWith('العنوان:') || line.startsWith('Title:')) {
-          formattedTitle = line.replace(/^(العنوان:|Title:)\s*/, '').trim();
-        } else if (line.startsWith('-') || line.startsWith('•') || line.startsWith('*')) {
-          const point = line.replace(/^[-•*]\s*/, '').trim();
-          if (point.length > 0) summaryPoints.push(point);
-        }
+    for (const line of lines) {
+      if (line.startsWith('العنوان:') || line.startsWith('Title:')) {
+        formattedTitle = line.replace(/^(العنوان:|Title:)\s*/, '').trim();
+      } else if (line.startsWith('-') || line.startsWith('•') || line.startsWith('*')) {
+        const point = line.replace(/^[-•*]\s*/, '').trim();
+        if (point.length > 0) summaryPoints.push(point);
       }
+    }
 
-      if (summaryPoints.length > 0) {
-        return {
-          formattedTitle: formattedTitle || title,
-          summaryPoints: summaryPoints.slice(0, 3)
-        };
-      }
+    if (summaryPoints.length > 0) {
+      return {
+        formattedTitle: formattedTitle || title,
+        summaryPoints: summaryPoints.slice(0, 3)
+      };
     }
   }
 
-  // 2. إذا لم يكن Gemini متاحاً أو فشل، نقوم بالترجمة التلقائية الفورية المجانية 100%!
+  // 2. خطة الأمان الفورية (ترجمة تلقائية للغة المختارة)
   let finalTitle = title;
   let finalSnippet = cleanContent.slice(0, 220);
 
   if (isArabic) {
-    finalTitle = await freeTranslateText(title, 'ar');
-    if (finalSnippet) {
-      finalSnippet = await freeTranslateText(finalSnippet, 'ar');
-    }
+    finalTitle = await translateText(title, 'ar');
+    if (finalSnippet) finalSnippet = await translateText(finalSnippet, 'ar');
+  } else {
+    // إذا كان الإنجليزي هو المطلوب والخبر بلغة أخرى
+    finalTitle = await translateText(title, 'en');
+    if (finalSnippet) finalSnippet = await translateText(finalSnippet, 'en');
   }
 
   return {
     formattedTitle: finalTitle,
     summaryPoints: [
-      finalSnippet ? finalSnippet + (cleanContent.length > 220 ? '...' : '') : (isArabic ? 'اضغط على الرابط بالأسفل لقراءة تفاصيل هذا الخبر.' : 'Click below to read full details.'),
-      isArabic
-        ? '🔗 اضغط على زر المصدر أدناه لقراءة التفاصيل الكاملة.'
-        : '🔗 Click the source button below to read full details.'
+      finalSnippet ? finalSnippet + (cleanContent.length > 220 ? '...' : '') : (isArabic ? 'اضغط أدناه لقراءة التفاصيل الكاملة.' : 'Click below to read full details.'),
+      isArabic ? '🔗 اضغط على زر المصدر أدناه لقراءة التفاصيل الكاملة.' : '🔗 Click the source button below to read the full report.'
     ]
   };
 }
 
 /**
- * توليد الحصاد الإخباري اليومي
+ * توليد ملخص وحصاد إخباري يومي شامل بالذكاء الاصطناعي لكلا اللغتين
  */
 export async function generateDailyRecap(apiKey, newsItems) {
   return generateDailyRecapWithLang(apiKey, newsItems, 'ar');
@@ -159,45 +202,39 @@ export async function generateDailyRecapWithLang(apiKey, newsItems, lang = 'ar')
   const isArabic = lang === 'ar';
 
   if (!Array.isArray(newsItems) || newsItems.length === 0) {
-    return isArabic ? '⚠️ لا توجد أخبار كافية لتوليد الحصاد اليومي.' : '⚠️ No news items available for daily recap.';
+    return isArabic ? '⚠️ لا توجد أخبار كافية لتوليد الحصاد اليومي.' : '⚠️ Not enough news articles to generate recap.';
   }
 
-  const newsListText = newsItems
-    .map((n, i) => `${i + 1}. ${n.title} [${n.source}]`)
-    .join('\n');
+  const newsList = newsItems.map((n, i) => `${i + 1}. ${n.title} [${n.source}]`).join('\n');
 
-  // 1. محاولة Gemini
-  if (apiKey && apiKey.trim().length > 0) {
-    const prompt = isArabic
-      ? `أنت محرر إخباري تنفيذي.
-إليك قائمة بأبرز أخبار اليوم:
-${newsListText}
+  // 1. محاولة الذكاء الاصطناعي
+  const prompt = isArabic
+    ? `أنت محرر إخباري تنفيذي. لديك هذه القائمة من الأخبار:
+${newsList}
 
 المطلوب:
-- ترجم وصغ نشرة موجزة بعنوان "⚡ حصاد FeedPulse الإخباري اليومي" باللغة العربية الفصحى حصراً.
-- لخص أهم الأخبار في 5 نقاط واضحة وممتعة مع إيموجي مناسب لكل نقطة.`
-      : `You are an executive news editor.
-Here is today's top stories:
-${newsListText}
+- صغ ملخصاً إخبارياً مشوقاً بعنوان "⚡ حصاد FeedPulse الإخباري اليومي" باللغة العربية حصراً.
+- لخص أهم 5 أحداث في نقاط موجزة ومفيدة باللغة العربية مع إيموجي لكل نقطة.`
+    : `You are an executive news editor. Here is today's news list:
+${newsList}
 
 Task:
-- Write a daily brief titled "⚡ FeedPulse Daily Highlights" in English.
-- Summarize the top stories in 5 informative bullet points with emojis.`;
+- Write a daily news brief titled "⚡ FeedPulse Daily Highlights" in English.
+- Summarize the top 5 stories in concise bullet points with suitable emojis.`;
 
-    const aiSummary = await callGeminiWithFallback(apiKey, prompt);
-    if (aiSummary) return aiSummary;
-  }
+  const aiText = await requestGemini(apiKey, prompt);
+  if (aiText) return aiText;
 
-  // 2. الترجمة التلقائية الفورية المجانية والمضمونة 100% لكل الأخبار!
-  const translatedItems = [];
+  // 2. خطة أمان الترجمة
+  const formattedItems = [];
   for (const item of newsItems.slice(0, 6)) {
-    const translatedTitle = isArabic ? await freeTranslateText(item.title, 'ar') : item.title;
-    translatedItems.push(`🔹 **${translatedTitle}** *(${item.source})*`);
+    const translatedTitle = isArabic ? await translateText(item.title, 'ar') : await translateText(item.title, 'en');
+    formattedItems.push(`🔹 **${translatedTitle}** *(${item.source})*`);
   }
 
   const header = isArabic
     ? '📊 **⚡ حصاد FeedPulse الإخباري اليومي:**\n'
     : '📊 **⚡ FeedPulse Daily News Highlights:**\n';
 
-  return header + translatedItems.join('\n');
+  return header + formattedItems.join('\n');
 }
