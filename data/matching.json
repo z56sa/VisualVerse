@@ -3,216 +3,269 @@
     "id": "anime-001",
     "category": "anime",
     "title": "Demon Slayer — Tanjiro & Nezuko",
-    "tags": ["demon slayer", "kimetsu", "siblings"],
+    "tags": [
+      "demon slayer",
+      "kimetsu",
+      "siblings"
+    ],
     "avatar1": {
       "label": "Tanjiro",
-      "url": "https://i.pinimg.com/736x/7c/6a/e3/7c6ae3cabb20e86e5e3c32b71ce7b847.jpg"
+      "url": "/images/anime-001-avatar1.svg"
     },
     "avatar2": {
       "label": "Nezuko",
-      "url": "https://i.pinimg.com/736x/5e/dc/5b/5edc5b94a4e16d8b9e7f47e60b7e1c3a.jpg"
+      "url": "/images/anime-001-avatar2.svg"
     },
     "banner": {
       "label": "Demon Slayer Banner",
-      "url": "https://i.pinimg.com/originals/3b/0d/4e/3b0d4e6c62dc7c5e88b6e5c9dc7a4a6e.jpg"
+      "url": "/images/anime-001-banner.svg"
     }
   },
   {
     "id": "anime-002",
     "category": "anime",
     "title": "Naruto — Naruto & Sasuke",
-    "tags": ["naruto", "rivalry", "ninja"],
+    "tags": [
+      "naruto",
+      "rivalry",
+      "ninja"
+    ],
     "avatar1": {
       "label": "Naruto",
-      "url": "https://i.pinimg.com/736x/ae/1b/aa/ae1baa6c91cef8cc45a2a285e5a9c6ee.jpg"
+      "url": "/images/anime-002-avatar1.svg"
     },
     "avatar2": {
       "label": "Sasuke",
-      "url": "https://i.pinimg.com/736x/53/c5/3e/53c53e53a9a7a8f4b0e7a5e3b9b5c8d7.jpg"
+      "url": "/images/anime-002-avatar2.svg"
     },
     "banner": {
       "label": "Naruto Banner",
-      "url": "https://i.pinimg.com/originals/c7/3a/9f/c73a9f1d4e2b8c5a6d7e8f9a0b1c2d3e.jpg"
+      "url": "/images/anime-002-banner.svg"
     }
   },
   {
     "id": "anime-003",
     "category": "anime",
     "title": "Attack on Titan — Levi & Mikasa",
-    "tags": ["aot", "survey corps", "titan"],
+    "tags": [
+      "aot",
+      "survey corps",
+      "titan"
+    ],
     "avatar1": {
       "label": "Levi",
-      "url": "https://i.pinimg.com/736x/d2/b4/c6/d2b4c6e8f0a2c4e6f8a0c2e4f6a8c0e2.jpg"
+      "url": "/images/anime-003-avatar1.svg"
     },
     "avatar2": {
       "label": "Mikasa",
-      "url": "https://i.pinimg.com/736x/a1/b3/c5/a1b3c5d7e9f1a3b5c7d9e1f3a5b7c9d1.jpg"
+      "url": "/images/anime-003-avatar2.svg"
     },
     "banner": {
       "label": "AOT Banner",
-      "url": "https://i.pinimg.com/originals/1a/2b/3c/1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d.jpg"
+      "url": "/images/anime-003-banner.svg"
     }
   },
   {
     "id": "anime-004",
     "category": "anime",
     "title": "One Piece — Luffy & Zoro",
-    "tags": ["one piece", "straw hat", "pirate"],
+    "tags": [
+      "one piece",
+      "straw hat",
+      "pirate"
+    ],
     "avatar1": {
       "label": "Luffy",
-      "url": "https://i.pinimg.com/736x/f1/e2/d3/f1e2d3c4b5a6978869706152433425167.jpg"
+      "url": "/images/anime-004-avatar1.svg"
     },
     "avatar2": {
       "label": "Zoro",
-      "url": "https://i.pinimg.com/736x/b2/c3/d4/b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7.jpg"
+      "url": "/images/anime-004-avatar2.svg"
     },
     "banner": {
       "label": "One Piece Banner",
-      "url": "https://i.pinimg.com/originals/e7/f8/a9/e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2.jpg"
+      "url": "/images/anime-004-banner.svg"
     }
   },
   {
     "id": "gaming-001",
     "category": "gaming",
     "title": "Valorant — Jett & Phoenix",
-    "tags": ["valorant", "agents", "fps"],
+    "tags": [
+      "valorant",
+      "agents",
+      "fps"
+    ],
     "avatar1": {
       "label": "Jett",
-      "url": "https://i.pinimg.com/736x/4a/5b/6c/4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d.jpg"
+      "url": "/images/gaming-001-avatar1.svg"
     },
     "avatar2": {
       "label": "Phoenix",
-      "url": "https://i.pinimg.com/736x/9d/0e/1f/9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a.jpg"
+      "url": "/images/gaming-001-avatar2.svg"
     },
     "banner": {
       "label": "Valorant Banner",
-      "url": "https://i.pinimg.com/originals/c5/d6/e7/c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0.jpg"
+      "url": "/images/gaming-001-banner.svg"
     }
   },
   {
     "id": "gaming-002",
     "category": "gaming",
     "title": "Genshin Impact — Hu Tao & Xiao",
-    "tags": ["genshin", "hutao", "xiao"],
+    "tags": [
+      "genshin",
+      "hutao",
+      "xiao"
+    ],
     "avatar1": {
       "label": "Hu Tao",
-      "url": "https://i.pinimg.com/736x/3e/4f/5a/3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b.jpg"
+      "url": "/images/gaming-002-avatar1.svg"
     },
     "avatar2": {
       "label": "Xiao",
-      "url": "https://i.pinimg.com/736x/7b/8c/9d/7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e.jpg"
+      "url": "/images/gaming-002-avatar2.svg"
     },
     "banner": {
       "label": "Genshin Banner",
-      "url": "https://i.pinimg.com/originals/a3/b4/c5/a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8.jpg"
+      "url": "/images/gaming-002-banner.svg"
     }
   },
   {
     "id": "gaming-003",
     "category": "gaming",
     "title": "Fortnite — Crystal & Catalyst",
-    "tags": ["fortnite", "skins", "duo"],
+    "tags": [
+      "fortnite",
+      "skins",
+      "duo"
+    ],
     "avatar1": {
       "label": "Crystal",
-      "url": "https://i.pinimg.com/736x/1c/2d/3e/1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f.jpg"
+      "url": "/images/gaming-003-avatar1.svg"
     },
     "avatar2": {
       "label": "Catalyst",
-      "url": "https://i.pinimg.com/736x/5f/6a/7b/5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c.jpg"
+      "url": "/images/gaming-003-avatar2.svg"
     },
     "banner": {
       "label": "Fortnite Banner",
-      "url": "https://i.pinimg.com/originals/d1/e2/f3/d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6.jpg"
+      "url": "/images/gaming-003-banner.svg"
     }
   },
   {
     "id": "couples-001",
     "category": "couples",
     "title": "Pink Rose — Matching Couple",
-    "tags": ["couple", "love", "pink", "aesthetic"],
+    "tags": [
+      "couple",
+      "love",
+      "pink",
+      "aesthetic"
+    ],
     "avatar1": {
       "label": "Her Avatar",
-      "url": "https://i.pinimg.com/736x/e8/f9/a0/e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3.jpg"
+      "url": "/images/couples-001-avatar1.svg"
     },
     "avatar2": {
       "label": "His Avatar",
-      "url": "https://i.pinimg.com/736x/2b/3c/4d/2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e.jpg"
+      "url": "/images/couples-001-avatar2.svg"
     },
     "banner": {
       "label": "Pink Rose Banner",
-      "url": "https://i.pinimg.com/originals/f4/a5/b6/f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9.jpg"
+      "url": "/images/couples-001-banner.svg"
     }
   },
   {
     "id": "couples-002",
     "category": "couples",
     "title": "Midnight Stars — Dark Couple",
-    "tags": ["couple", "dark", "stars", "night"],
+    "tags": [
+      "couple",
+      "dark",
+      "stars",
+      "night"
+    ],
     "avatar1": {
       "label": "Her Avatar",
-      "url": "https://i.pinimg.com/736x/6d/7e/8f/6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a.jpg"
+      "url": "/images/couples-002-avatar1.svg"
     },
     "avatar2": {
       "label": "His Avatar",
-      "url": "https://i.pinimg.com/736x/a0/b1/c2/a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5.jpg"
+      "url": "/images/couples-002-avatar2.svg"
     },
     "banner": {
       "label": "Midnight Stars Banner",
-      "url": "https://i.pinimg.com/originals/b7/c8/d9/b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2.jpg"
+      "url": "/images/couples-002-banner.svg"
     }
   },
   {
     "id": "aesthetic-001",
     "category": "aesthetic",
     "title": "Lofi Vibes — Chill Duo",
-    "tags": ["lofi", "chill", "aesthetic", "purple"],
+    "tags": [
+      "lofi",
+      "chill",
+      "aesthetic",
+      "purple"
+    ],
     "avatar1": {
       "label": "Avatar 1",
-      "url": "https://i.pinimg.com/736x/3c/4d/5e/3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f.jpg"
+      "url": "/images/aesthetic-001-avatar1.svg"
     },
     "avatar2": {
       "label": "Avatar 2",
-      "url": "https://i.pinimg.com/736x/7f/8a/9b/7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c.jpg"
+      "url": "/images/aesthetic-001-avatar2.svg"
     },
     "banner": {
       "label": "Lofi Banner",
-      "url": "https://i.pinimg.com/originals/c9/d0/e1/c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4.jpg"
+      "url": "/images/aesthetic-001-banner.svg"
     }
   },
   {
     "id": "aesthetic-002",
     "category": "aesthetic",
     "title": "Sunset Gradient — Warm Tones",
-    "tags": ["sunset", "gradient", "warm", "orange"],
+    "tags": [
+      "sunset",
+      "gradient",
+      "warm",
+      "orange"
+    ],
     "avatar1": {
       "label": "Avatar 1",
-      "url": "https://i.pinimg.com/736x/d2/e3/f4/d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7.jpg"
+      "url": "/images/aesthetic-002-avatar1.svg"
     },
     "avatar2": {
       "label": "Avatar 2",
-      "url": "https://i.pinimg.com/736x/f5/a6/b7/f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0.jpg"
+      "url": "/images/aesthetic-002-avatar2.svg"
     },
     "banner": {
       "label": "Sunset Banner",
-      "url": "https://i.pinimg.com/originals/e1/f2/a3/e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6.jpg"
+      "url": "/images/aesthetic-002-banner.svg"
     }
   },
   {
     "id": "aesthetic-003",
     "category": "aesthetic",
     "title": "Dark Academia — Books & Mist",
-    "tags": ["dark academia", "books", "moody", "brown"],
+    "tags": [
+      "dark academia",
+      "books",
+      "moody",
+      "brown"
+    ],
     "avatar1": {
       "label": "Avatar 1",
-      "url": "https://i.pinimg.com/736x/a8/b9/c0/a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3.jpg"
+      "url": "/images/aesthetic-003-avatar1.svg"
     },
     "avatar2": {
       "label": "Avatar 2",
-      "url": "https://i.pinimg.com/736x/c1/d2/e3/c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6.jpg"
+      "url": "/images/aesthetic-003-avatar2.svg"
     },
     "banner": {
       "label": "Dark Academia Banner",
-      "url": "https://i.pinimg.com/originals/f7/a8/b9/f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2.jpg"
+      "url": "/images/aesthetic-003-banner.svg"
     }
   }
 ]
