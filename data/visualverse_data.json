@@ -1,74 +1,101 @@
 [
   {
     "id": 1,
-    "title": "Neon Cyberpunk Samurai",
+    "title": "Gojo & Geto (Jujutsu Kaisen Duo)",
     "category": "anime",
-    "avatar_url": "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1024&q=80",
-    "banner_url": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1024&q=80",
-    "source": "Default Gallery",
-    "created_at": "2026-10-21T17:33:26.016Z"
+    "avatar_url": "https://i.pinimg.com/736x/8f/c2/f7/8fc2f7ef38dc41d40c6b12a02b1cce8e.jpg",
+    "banner_url": "https://i.pinimg.com/originals/93/b6/ec/93b6ec2ec5b53eb9d5bc1eb64e97669b.jpg",
+    "source": "VisualVerse Curated Anime",
+    "created_at": "2026-10-21T17:40:00.000Z"
   },
   {
     "id": 2,
-    "title": "Anime Sunset Aesthetic",
+    "title": "Tanjiro & Nezuko (Demon Slayer)",
     "category": "anime",
-    "avatar_url": "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=1024&q=80",
-    "banner_url": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1024&q=80",
-    "source": "Default Gallery",
-    "created_at": "2026-10-21T17:33:26.016Z"
+    "avatar_url": "https://i.pinimg.com/736x/41/d0/5c/41d05ca198dc853efce27d6d1b643a12.jpg",
+    "banner_url": "https://i.pinimg.com/originals/47/3e/2d/473e2d6b38c4c70d4f3b4329d4791e84.jpg",
+    "source": "VisualVerse Curated Anime",
+    "created_at": "2026-10-21T17:40:00.000Z"
   },
   {
     "id": 3,
-    "title": "Cozy Sunset Couple",
-    "category": "couples",
-    "avatar_url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1024&q=80",
-    "banner_url": "https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=1024&q=80",
-    "source": "Default Gallery",
-    "created_at": "2026-10-21T17:33:26.017Z"
+    "title": "Naruto & Sasuke (Eternal Rivals)",
+    "category": "anime",
+    "avatar_url": "https://i.pinimg.com/736x/89/36/41/893641a995325ffce025dc97ef0585cb.jpg",
+    "banner_url": "https://i.pinimg.com/originals/c9/22/02/c92202652a92c30aa7fc71c897f90f20.jpg",
+    "source": "VisualVerse Curated Anime",
+    "created_at": "2026-10-21T17:40:00.000Z"
   },
   {
     "id": 4,
-    "title": "Night City Duo",
+    "title": "Kimi no Na wa (Your Name Romance)",
     "category": "couples",
-    "avatar_url": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=1024&q=80",
-    "banner_url": "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1024&q=80",
-    "source": "Default Gallery",
-    "created_at": "2026-10-21T17:33:26.017Z"
+    "avatar_url": "https://i.pinimg.com/736x/be/49/a1/be49a15c8e3e4eb3074360eec86ad60a.jpg",
+    "banner_url": "https://i.pinimg.com/originals/e8/61/96/e86196238b16bbcfceb1130e66699105.jpg",
+    "source": "VisualVerse Curated Couples",
+    "created_at": "2026-10-21T17:40:00.000Z"
   },
   {
     "id": 5,
-    "title": "Dark Minimalist Aesthetic",
-    "category": "aesthetic",
-    "avatar_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1024&q=80",
-    "banner_url": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1024&q=80",
-    "source": "Default Gallery",
-    "created_at": "2026-10-21T17:33:26.017Z"
+    "title": "Horimiya (Sweet Couple Matching)",
+    "category": "couples",
+    "avatar_url": "https://i.pinimg.com/736x/2b/96/23/2b96234fe7ba6b571d871759ea06bf36.jpg",
+    "banner_url": "https://i.pinimg.com/originals/18/8c/d7/188cd72834c896e38b3658ebf1b80d0c.jpg",
+    "source": "VisualVerse Curated Couples",
+    "created_at": "2026-10-21T17:40:00.000Z"
   },
   {
     "id": 6,
-    "title": "Purple Synthwave Waves",
-    "category": "aesthetic",
-    "avatar_url": "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=1024&q=80",
-    "banner_url": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1024&q=80",
-    "source": "Default Gallery",
-    "created_at": "2026-10-21T17:33:26.017Z"
+    "title": "Dark Boy & Girl Matching (Boy Part)",
+    "category": "couples",
+    "avatar_url": "https://i.pinimg.com/736x/55/6c/42/556c42978a3b5ce8078ee7efc9027878.jpg",
+    "banner_url": "https://i.pinimg.com/originals/65/56/66/655666f8ec28a8dc422998632bfdf6ca.jpg",
+    "source": "VisualVerse Curated Couples",
+    "created_at": "2026-10-21T17:40:00.000Z"
   },
   {
     "id": 7,
-    "title": "Ethereal Cosmic Fantasy",
-    "category": "gaming",
-    "avatar_url": "https://images.unsplash.com/photo-1563089145-599997674d42?w=1024&q=80",
-    "banner_url": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1024&q=80",
-    "source": "Default Gallery",
-    "created_at": "2026-10-21T17:33:26.017Z"
+    "title": "Cyberpunk Edgerunners (David & Lucy)",
+    "category": "couples",
+    "avatar_url": "https://i.pinimg.com/736x/60/a4/09/60a409f8ae434571e2efef95058da6f1.jpg",
+    "banner_url": "https://i.pinimg.com/originals/c1/9e/7b/c19e7bf33860bb4a5308cb38b975876d.jpg",
+    "source": "VisualVerse Curated Couples",
+    "created_at": "2026-10-21T17:40:00.000Z"
   },
   {
     "id": 8,
-    "title": "Futuristic Mech Pilot",
+    "title": "Black & Red Tokyo Aesthetic",
+    "category": "aesthetic",
+    "avatar_url": "https://i.pinimg.com/736x/ec/4c/96/ec4c968f9aef1e227d81a95a8e0f6b43.jpg",
+    "banner_url": "https://i.pinimg.com/originals/f3/2a/82/f32a82d02c9a174c87cb7cf5b565ad0c.jpg",
+    "source": "VisualVerse Curated Aesthetic",
+    "created_at": "2026-10-21T17:40:00.000Z"
+  },
+  {
+    "id": 9,
+    "title": "Purple Sunset Clouds Aesthetic",
+    "category": "aesthetic",
+    "avatar_url": "https://i.pinimg.com/736x/a2/33/c2/a233c27e85e4860b2ebcf9ef19ec3d5b.jpg",
+    "banner_url": "https://i.pinimg.com/originals/82/13/46/8213463372c3d5272a2977dc4a67848f.jpg",
+    "source": "VisualVerse Curated Aesthetic",
+    "created_at": "2026-10-21T17:40:00.000Z"
+  },
+  {
+    "id": 10,
+    "title": "Ghost of Tsushima (Samurai Gaming)",
     "category": "gaming",
-    "avatar_url": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1024&q=80",
-    "banner_url": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=1024&q=80",
-    "source": "Default Gallery",
-    "created_at": "2026-10-21T17:33:26.017Z"
+    "avatar_url": "https://i.pinimg.com/736x/21/df/f5/21dff52e043689ea52a0a2df33ec658d.jpg",
+    "banner_url": "https://i.pinimg.com/originals/eb/c3/0f/ebc30f40be0c3451db0c87a552bfcb12.jpg",
+    "source": "VisualVerse Curated Gaming",
+    "created_at": "2026-10-21T17:40:00.000Z"
+  },
+  {
+    "id": 11,
+    "title": "Valorant Omen & Viper",
+    "category": "gaming",
+    "avatar_url": "https://i.pinimg.com/736x/5f/20/df/5f20df5d68d0bbbc44e2b020188bb3e6.jpg",
+    "banner_url": "https://i.pinimg.com/originals/50/f0/54/50f0545a1f28b7a972c47690bb3db341.jpg",
+    "source": "VisualVerse Curated Gaming",
+    "created_at": "2026-10-21T17:40:00.000Z"
   }
 ]
