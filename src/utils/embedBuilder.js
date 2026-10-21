@@ -36,7 +36,7 @@ export const embedUtils = {
     // Interactive Action Row
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId(`matching_next_${pair.category}`)
+        .setCustomId(`matching_next_${pair.category}_${pair.id}`)
         .setLabel('صورة أخرى 🔄')
         .setStyle(ButtonStyle.Primary),
 

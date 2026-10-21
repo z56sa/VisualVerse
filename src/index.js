@@ -100,10 +100,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       // Handle "Next Image 🔄" button
       if (customId.startsWith('matching_next_')) {
-        const category = customId.replace('matching_next_', '');
+        const parts = customId.replace('matching_next_', '').split('_');
+        const category = parts[0] || 'all';
+        const currentId = parts[1] ? parseInt(parts[1], 10) : null;
         await interaction.deferUpdate();
 
-        const pair = dbService.getRandomPair(category);
+        const pair = dbService.getRandomPair(category, currentId);
 
         if (!pair) {
           return interaction.followUp({

@@ -10,6 +10,15 @@
   },
   {
     "id": 2,
+    "title": "Anime Sunset Aesthetic",
+    "category": "anime",
+    "avatar_url": "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=1024&q=80",
+    "banner_url": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1024&q=80",
+    "source": "Default Gallery",
+    "created_at": "2026-10-21T17:33:26.016Z"
+  },
+  {
+    "id": 3,
     "title": "Cozy Sunset Couple",
     "category": "couples",
     "avatar_url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1024&q=80",
@@ -18,7 +27,16 @@
     "created_at": "2026-10-21T17:33:26.017Z"
   },
   {
-    "id": 3,
+    "id": 4,
+    "title": "Night City Duo",
+    "category": "couples",
+    "avatar_url": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=1024&q=80",
+    "banner_url": "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1024&q=80",
+    "source": "Default Gallery",
+    "created_at": "2026-10-21T17:33:26.017Z"
+  },
+  {
+    "id": 5,
     "title": "Dark Minimalist Aesthetic",
     "category": "aesthetic",
     "avatar_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1024&q=80",
@@ -27,11 +45,29 @@
     "created_at": "2026-10-21T17:33:26.017Z"
   },
   {
-    "id": 4,
+    "id": 6,
+    "title": "Purple Synthwave Waves",
+    "category": "aesthetic",
+    "avatar_url": "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=1024&q=80",
+    "banner_url": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1024&q=80",
+    "source": "Default Gallery",
+    "created_at": "2026-10-21T17:33:26.017Z"
+  },
+  {
+    "id": 7,
     "title": "Ethereal Cosmic Fantasy",
     "category": "gaming",
     "avatar_url": "https://images.unsplash.com/photo-1563089145-599997674d42?w=1024&q=80",
-    "banner_url": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1024&q=80",
+    "banner_url": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1024&q=80",
+    "source": "Default Gallery",
+    "created_at": "2026-10-21T17:33:26.017Z"
+  },
+  {
+    "id": 8,
+    "title": "Futuristic Mech Pilot",
+    "category": "gaming",
+    "avatar_url": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1024&q=80",
+    "banner_url": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=1024&q=80",
     "source": "Default Gallery",
     "created_at": "2026-10-21T17:33:26.017Z"
   }
