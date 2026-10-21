@@ -1,47 +1,77 @@
 import axios from 'axios';
 
 const PIXABAY_URL = 'https://pixabay.com/api/';
-
-/**
- * نسبة أبعاد البانر الصارمة: عرض / ارتفاع >= 1.7
- */
 const MIN_BANNER_RATIO = 1.7;
 
 /**
- * مكتبة موضوعات بانر جمالية احتياطية
+ * خريطة كلمات البحث: تحدد نوع الصورة المناسب لكل موضوع
+ * photo = صور حقيقية | illustration = رسوم/أنمي/فن رقمي | all = الاثنان
  */
-const CURATED_BANNER_THEMES = [
-  'anime landscape',
-  'cyberpunk city',
-  'lofi aesthetic',
-  'retrowave synthwave',
-  'japanese aesthetic',
-  'dark fantasy landscape',
-  'space galaxy',
-  'pixel art landscape',
-  'aesthetic nature',
-  'gaming wallpaper'
-];
+const CATEGORY_MAP = {
+  // أنمي وفن رقمي → illustration
+  anime: 'illustration',
+  manga: 'illustration',
+  'demon slayer': 'illustration',
+  naruto: 'illustration',
+  'one piece': 'illustration',
+  genshin: 'illustration',
+  'jujutsu kaisen': 'illustration',
+  art: 'illustration',
+  digital: 'illustration',
+  fantasy: 'illustration',
+  aesthetic: 'illustration',
+  lofi: 'illustration',
+  cyberpunk: 'illustration',
+  retrowave: 'illustration',
+  pixel: 'illustration',
+  cartoon: 'illustration',
+  gaming: 'illustration',
+  // طبيعة ومناظر → photo
+  nature: 'photo',
+  landscape: 'photo',
+  sky: 'photo',
+  ocean: 'photo',
+  mountain: 'photo',
+  city: 'photo',
+};
 
 /**
- * اختيار عنصر عشوائي من مصفوفة
+ * يحدد نوع الصورة المناسب بناءً على كلمة البحث
+ * @param {string} query
+ * @returns {'photo' | 'illustration' | 'all'}
  */
+function detectImageType(query) {
+  const lower = query.toLowerCase();
+  for (const [keyword, type] of Object.entries(CATEGORY_MAP)) {
+    if (lower.includes(keyword)) return type;
+  }
+  return 'all'; // الافتراضي: كل الأنواع
+}
+
+/**
+ * مكتبة بانرات جمالية احتياطية
+ */
+const CURATED_THEMES = [
+  { q: 'anime landscape banner', type: 'illustration' },
+  { q: 'cyberpunk city banner', type: 'illustration' },
+  { q: 'lofi aesthetic art', type: 'illustration' },
+  { q: 'fantasy landscape art', type: 'illustration' },
+  { q: 'retrowave synthwave banner', type: 'illustration' },
+  { q: 'japanese art landscape', type: 'illustration' },
+  { q: 'space galaxy art', type: 'illustration' },
+  { q: 'pixel art landscape', type: 'illustration' },
+];
+
 function pickRandom(arr) {
   if (!Array.isArray(arr) || arr.length === 0) return null;
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-/**
- * فحص نسبة الأبعاد الصارمة (>= 1.7) لقبول البانرات العريضة فقط
- */
 function isWideBanner(width, height) {
   if (!width || !height || height <= 0) return false;
   return (width / height) >= MIN_BANNER_RATIO;
 }
 
-/**
- * تنسيق نتيجة Pixabay كهيكل بانر قياسي
- */
 function formatBanner(hit, displayTerm, source) {
   return {
     id: String(hit.id),
@@ -56,83 +86,110 @@ function formatBanner(hit, displayTerm, source) {
 }
 
 /**
- * البحث في Pixabay مع فلترة صارمة للبانرات العريضة
+ * البحث في Pixabay مع randomPage لمنع التكرار
+ * @param {string} apiKey
+ * @param {string} query
+ * @param {'photo'|'illustration'|'all'} imageType
  */
-async function searchPixabay(apiKey, query, page = 1) {
-  const response = await axios.get(PIXABAY_URL, {
+async function searchPixabay(apiKey, query, imageType = 'all') {
+  // أولاً نحصل على عدد النتائج الكلي
+  const firstRes = await axios.get(PIXABAY_URL, {
     params: {
       key: apiKey,
       q: query,
-      image_type: 'photo',
-      orientation: 'horizontal', // أفقي فقط
+      image_type: imageType,
+      orientation: 'horizontal',
       per_page: 50,
-      page,
+      page: 1,
       safesearch: true,
       order: 'popular'
     },
     timeout: 8000
   });
 
-  const hits = response.data?.hits;
-  if (!Array.isArray(hits) || hits.length === 0) return [];
+  const totalHits = firstRes.data?.totalHits || 0;
+  const maxPage = Math.min(Math.ceil(totalHits / 50), 6); // حد أقصى 6 صفحات
 
-  // فلترة صارمة: عرض / ارتفاع >= 1.7
-  return hits.filter(hit =>
-    isWideBanner(hit.imageWidth, hit.imageHeight)
-  );
+  // اختر صفحة عشوائية لمنع تكرار نفس النتائج
+  const randomPage = maxPage > 1 ? Math.floor(Math.random() * maxPage) + 1 : 1;
+
+  let hits = firstRes.data?.hits || [];
+
+  // إذا الصفحة مختلفة، اجلب الصفحة العشوائية
+  if (randomPage > 1) {
+    const randomRes = await axios.get(PIXABAY_URL, {
+      params: {
+        key: apiKey,
+        q: query,
+        image_type: imageType,
+        orientation: 'horizontal',
+        per_page: 50,
+        page: randomPage,
+        safesearch: true,
+        order: 'popular'
+      },
+      timeout: 8000
+    });
+    hits = randomRes.data?.hits || hits;
+  }
+
+  // فلترة البانرات العريضة فقط
+  return hits.filter(hit => isWideBanner(hit.imageWidth, hit.imageHeight));
 }
 
-/**
- * جلب بانر مفاجئ عشوائي
- */
 export async function getSurpriseBanner(apiKey) {
-  const theme = pickRandom(CURATED_BANNER_THEMES);
-  return getSmartBanner(apiKey, theme, true);
+  const theme = pickRandom(CURATED_THEMES);
+  try {
+    const results = await searchPixabay(apiKey, theme.q, theme.type);
+    if (results.length > 0) return formatBanner(pickRandom(results), theme.q, 'surprise');
+  } catch (e) {
+    console.warn('[Surprise] Failed:', e.message);
+  }
+  return getSmartBanner(apiKey, 'anime landscape', true);
 }
 
-/**
- * المحرك الرئيسي: بحث وفلترة البانرات العريضة من Pixabay
- */
 export async function getSmartBanner(apiKey, query, isSurprise = false) {
   const rawTerm = query ? query.trim() : 'anime';
+  const imageType = detectImageType(rawTerm);
 
-  // صياغات بحث متخصصة في الخلفيات العريضة
-  const queries = rawTerm.toLowerCase().includes('banner') || rawTerm.toLowerCase().includes('landscape')
-    ? [rawTerm, `${rawTerm} wallpaper`]
-    : [`${rawTerm} landscape wallpaper`, `${rawTerm} banner background`, rawTerm];
+  // صياغة استعلامات بحث متخصصة
+  const queries = [
+    { q: `${rawTerm} banner landscape`, type: imageType },
+    { q: `${rawTerm} wallpaper wide`, type: imageType },
+    { q: rawTerm, type: imageType },
+  ];
 
-  for (const q of queries) {
+  for (const { q, type } of queries) {
     try {
-      const page = Math.floor(Math.random() * 3) + 1; // صفحات عشوائية لتنويع النتائج
-      const results = await searchPixabay(apiKey, q, page);
+      const results = await searchPixabay(apiKey, q, type);
       if (results.length > 0) {
         return formatBanner(pickRandom(results), rawTerm, isSurprise ? 'surprise' : 'search');
       }
     } catch (err) {
-      console.warn(`[Pixabay] Query failed for "${q}":`, err.message);
+      console.warn(`[Pixabay] Failed for "${q}":`, err.message);
     }
   }
 
   // بحث احتياطي من المكتبة المُنسقة
-  for (const theme of CURATED_BANNER_THEMES.slice(0, 4)) {
+  for (const theme of CURATED_THEMES.slice(0, 3)) {
     try {
-      const results = await searchPixabay(apiKey, theme);
+      const results = await searchPixabay(apiKey, theme.q, theme.type);
       if (results.length > 0) {
-        return formatBanner(pickRandom(results), theme, 'fallback');
+        return formatBanner(pickRandom(results), theme.q, 'fallback');
       }
     } catch (e) {
-      console.warn('[Pixabay] Fallback search error:', e.message);
+      console.warn('[Fallback] Failed:', e.message);
     }
   }
 
   // بانر طوارئ موثوق
   return {
     id: 'emergency',
-    title: 'Aesthetic Landscape Banner',
-    url: 'https://cdn.pixabay.com/photo/2022/01/11/21/48/background-6931101_1280.jpg',
+    title: 'Anime Aesthetic Landscape Banner',
+    url: 'https://cdn.pixabay.com/photo/2024/02/15/14/43/ai-generated-8576400_1280.jpg',
     pageUrl: 'https://pixabay.com',
-    dimensions: '1280x500',
-    ratio: '2.56',
+    dimensions: '1280x720',
+    ratio: '1.78',
     source: 'emergency_fallback',
     displayTerm: rawTerm
   };
