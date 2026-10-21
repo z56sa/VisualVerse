@@ -7,15 +7,24 @@ import { loadFeedsConfig } from '../services/storageService.js';
 export const latestNewsCommand = {
   data: new SlashCommandBuilder()
     .setName('latest-news')
-    .setDescription('جلب وتلخيص أحدث 3 أخبار فوراً في الشات بواسطة الذكاء الاصطناعي')
+    .setDescription('جلب وتلخيص أحدث 3 أخبار فوراً بالذكاء الاصطناعي (بالعربية أو الإنجليزية)')
     .addStringOption(option =>
       option
         .setName('category')
-        .setDescription('اختر تصنيف الأخبار (أو سيتم استخدام خلاصات سيرفرك)')
+        .setDescription('اختر تصنيف الأخبار')
         .addChoices(
-          { name: '🎮 ألعاب (IGN)', value: 'gaming' },
-          { name: '💻 تكنولوجيا (The Verge)', value: 'tech' },
+          { name: '🎮 ألعاب (IGN Gaming)', value: 'gaming' },
+          { name: '💻 تكنولوجيا (The Verge Tech)', value: 'tech' },
           { name: '🌸 أنمي (Anime News Network)', value: 'anime' }
+        )
+    )
+    .addStringOption(option =>
+      option
+        .setName('language')
+        .setDescription('اختر لغة التلخيص')
+        .addChoices(
+          { name: '🇸🇦 العربية (Arabic)', value: 'ar' },
+          { name: '🇺🇸 English (الإنجليزية)', value: 'en' }
         )
     ),
 
@@ -23,48 +32,57 @@ export const latestNewsCommand = {
     await interaction.deferReply();
 
     const category = interaction.options.getString('category');
-    let targetFeedUrl = null;
+    const selectedLang = interaction.options.getString('language');
+    const config = loadFeedsConfig();
+    const guildConfig = config[interaction.guildId];
 
+    // اللغة: إما المختارة بالأمر أو المضبوطة بالسيرفر أو الافتراضي 'ar'
+    const lang = selectedLang || guildConfig?.language || 'ar';
+    const isArabic = lang === 'ar';
+
+    let targetFeedUrl = null;
     if (category) {
       const found = DEFAULT_FEEDS.find(f => f.category === category);
       if (found) targetFeedUrl = found.url;
     } else {
-      // استخدام أول خلاصة مسجلة للسيرفر إن وجدت
-      const config = loadFeedsConfig();
-      const guildFeeds = config[interaction.guildId]?.feeds;
+      const guildFeeds = guildConfig?.feeds;
       if (guildFeeds && guildFeeds.length > 0) {
         targetFeedUrl = guildFeeds[0];
       } else {
-        targetFeedUrl = DEFAULT_FEEDS[0].url; // الافتراضي: ألعاب
+        targetFeedUrl = DEFAULT_FEEDS[0].url;
       }
     }
 
     try {
       const feedData = await fetchFeedItems(targetFeedUrl, 3);
       if (!feedData.items || feedData.items.length === 0) {
-        await interaction.editReply({ content: '⚠️ لم يتم العثور على أي أخبار حالياً في المصدر.' });
+        await interaction.editReply({
+          content: isArabic ? '⚠️ لم يتم العثور على أي أخبار حالياً في المصدر.' : '⚠️ No news items found currently in this feed.'
+        });
         return;
       }
 
       await interaction.editReply({
-        content: `⚡ **جاري معالجة وتلخيص أحدث الأخبار من: ${feedData.feedTitle}...**`
+        content: isArabic
+          ? `⚡ **جاري معالجة وتلخيص الأخبار من: ${feedData.feedTitle}...**`
+          : `⚡ **Processing and summarizing news from: ${feedData.feedTitle}...**`
       });
 
       for (let i = 0; i < feedData.items.length; i++) {
         const item = feedData.items[i];
-        const aiResult = await summarizeNewsItem(geminiApiKey, item.title, item.contentSnippet);
+        const aiResult = await summarizeNewsItem(geminiApiKey, item.title, item.contentSnippet, lang);
 
         const embed = createNewsEmbed({
-          arabicTitle: aiResult.arabicTitle,
-          originalTitle: item.title,
+          title: aiResult.formattedTitle,
           summaryPoints: aiResult.summaryPoints,
           link: item.link,
           imageUrl: item.imageUrl,
           pubDate: item.pubDate,
-          sourceName: feedData.feedTitle
+          sourceName: feedData.feedTitle,
+          lang
         });
 
-        const row = createNewsActionRow(item.link);
+        const row = createNewsActionRow(item.link, lang);
 
         if (i === 0) {
           await interaction.editReply({ content: null, embeds: [embed], components: [row] });
@@ -74,7 +92,7 @@ export const latestNewsCommand = {
       }
     } catch (err) {
       await interaction.editReply({
-        content: `❌ تعذر جلب الأخبار: \`${err.message}\``
+        content: isArabic ? `❌ تعذر جلب الأخبار: \`${err.message}\`` : `❌ Could not fetch news: \`${err.message}\``
       });
     }
   }

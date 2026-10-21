@@ -6,7 +6,7 @@ import { createNewsEmbed, createNewsActionRow } from '../utils/embedBuilder.js';
 let isChecking = false;
 
 /**
- * فحص الخلاصات المسجلة لكل السيرفرات وإرسال الأخبار الجديدة فوراً
+ * فحص الخلاصات المسجلة لكل السيرفرات وإرسال الأخبار الجديدة باللغة المحددة للسيرفر
  * @param {import('discord.js').Client} client 
  * @param {string} geminiApiKey 
  */
@@ -27,6 +27,8 @@ export async function checkFeedsAndBroadcast(client, geminiApiKey) {
       const channel = await client.channels.fetch(guildData.channelId).catch(() => null);
       if (!channel || !channel.isTextBased()) continue;
 
+      const lang = guildData.language || 'ar';
+
       if (!Array.isArray(guildData.lastPostedUrls)) {
         guildData.lastPostedUrls = [];
       }
@@ -36,21 +38,20 @@ export async function checkFeedsAndBroadcast(client, geminiApiKey) {
           const feed = await fetchFeedItems(feedUrl, 3);
           const newItems = feed.items.filter(item => !guildData.lastPostedUrls.includes(item.link));
 
-          // نرسل الأخبار من الأقدم للأحدث إذا كان هناك أكثر من خبر جديد
           for (const item of newItems.reverse()) {
-            console.log(`📢 [FeedPulse] خبر جديد تم اكتشافه: ${item.title}`);
+            console.log(`📢 [FeedPulse] (${lang}) خبر جديد: ${item.title}`);
 
-            const aiResult = await summarizeNewsItem(geminiApiKey, item.title, item.contentSnippet);
+            const aiResult = await summarizeNewsItem(geminiApiKey, item.title, item.contentSnippet, lang);
             const embed = createNewsEmbed({
-              arabicTitle: aiResult.arabicTitle,
-              originalTitle: item.title,
+              title: aiResult.formattedTitle,
               summaryPoints: aiResult.summaryPoints,
               link: item.link,
               imageUrl: item.imageUrl,
               pubDate: item.pubDate,
-              sourceName: feed.feedTitle
+              sourceName: feed.feedTitle,
+              lang
             });
-            const row = createNewsActionRow(item.link);
+            const row = createNewsActionRow(item.link, lang);
 
             await channel.send({ embeds: [embed], components: [row] });
 
