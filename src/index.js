@@ -29,13 +29,19 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => console.log(`🌐 Health check server on port ${PORT}`));
 
 // ─── Load Local Banners Database ─────────────────────────────────────────────
-const bannersDbPath = path.join(__dirname, 'banners.json');
+// Supports either root banners.json or src/banners.json
+let bannersDbPath = path.join(__dirname, '..', 'banners.json');
+if (!fs.existsSync(bannersDbPath)) {
+  bannersDbPath = path.join(__dirname, 'banners.json');
+}
+
 let bannersDb = {};
 
 try {
-  const data = fs.readFileSync(bannersDbPath, 'utf8');
-  bannersDb = JSON.parse(data);
-  console.log(`✅ Loaded banners database with categories:`, Object.keys(bannersDb));
+  const fileData = fs.readFileSync(bannersDbPath, 'utf8');
+  bannersDb = JSON.parse(fileData);
+  const totalCount = Object.values(bannersDb).reduce((acc, curr) => acc + curr.length, 0);
+  console.log(`✅ Loaded ${totalCount} banners across categories:`, Object.keys(bannersDb));
 } catch (err) {
   console.error('❌ Failed to load banners.json:', err.message);
   bannersDb = {
@@ -43,7 +49,6 @@ try {
       {
         title: 'Anime Scenic Horizon',
         url: 'https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif',
-        dimensions: '1000x400',
         ratio: '2.50'
       }
     ]
@@ -60,25 +65,24 @@ function getBannerByCategory(searchTerm) {
   const term = (searchTerm || 'anime').toLowerCase().trim();
   const categories = Object.keys(bannersDb);
 
-  // البحث عن فئة مطابقة
+  // البحث عن التصنيف المطابق
   let matchedCategory = categories.find(cat => term.includes(cat) || cat.includes(term));
 
   if (!matchedCategory) {
-    if (term.includes('game') || term.includes('play')) matchedCategory = 'gaming';
-    else if (term.includes('chill') || term.includes('relax')) matchedCategory = 'lofi';
-    else if (term.includes('neon') || term.includes('synth')) matchedCategory = 'cyberpunk';
-    else if (term.includes('sky') || term.includes('star') || term.includes('space')) matchedCategory = 'nature';
-    else matchedCategory = 'anime'; // الافتراضي
+    if (term.includes('game') || term.includes('play') || term.includes('fps')) matchedCategory = 'gaming';
+    else if (term.includes('chill') || term.includes('relax') || term.includes('rain')) matchedCategory = 'lofi';
+    else if (term.includes('neon') || term.includes('synth') || term.includes('future')) matchedCategory = 'cyberpunk';
+    else if (term.includes('sky') || term.includes('star') || term.includes('mountain') || term.includes('sea')) matchedCategory = 'nature';
+    else matchedCategory = 'anime'; // التصنيف الافتراضي
   }
 
   const categoryList = bannersDb[matchedCategory] || bannersDb.anime || [];
   const selected = pickRandom(categoryList);
 
   return {
-    title: selected.title || 'Discord Animated Banner',
+    title: selected.title || 'Discord Landscape Banner',
     url: selected.url,
-    dimensions: selected.dimensions || 'Wide Banner',
-    ratio: selected.ratio || '2.00',
+    ratio: selected.ratio || '2.50',
     category: matchedCategory,
     displayTerm: searchTerm || matchedCategory
   };
@@ -90,15 +94,15 @@ function getSurpriseBanner() {
   return getBannerByCategory(randomCat);
 }
 
-// ─── Embed & Action Row Helpers ───────────────────────────────────────────────
+// ─── Embed & Button Builders ─────────────────────────────────────────────────
 function createBannerEmbed(bannerData, user) {
   return new EmbedBuilder()
     .setTitle(bannerData.title)
     .setImage(bannerData.url)
     .setColor(0x5865f2) // Discord Blurple
-    .setDescription(`🖼️ **بانر ديسكورد عريض متحرك لـ:** **${bannerData.displayTerm}**`)
+    .setDescription(`🖼️ **بانر ديسكورد عريض فائق الدقة لـ:** **${bannerData.displayTerm}**`)
     .setFooter({
-      text: `Discord Banner (${bannerData.dimensions}) • Ratio ${bannerData.ratio}:1 • By ${user.username}`,
+      text: `Discord Banner • Ratio ${bannerData.ratio}:1 • Requested by ${user.username}`,
       iconURL: user.displayAvatarURL()
     })
     .setTimestamp();
@@ -141,7 +145,7 @@ if (!DISCORD_TOKEN || !CLIENT_ID) {
 async function registerCommands() {
   const bannerCommand = new SlashCommandBuilder()
     .setName('banner')
-    .setDescription('جلب بانر ديسكورد عريض متحرك ومضمون 100%')
+    .setDescription('جلب بانر ديسكورد عريض (Landscape Header) مضمون وسريع 100%')
     .addStringOption(opt =>
       opt.setName('search_term')
         .setDescription('أدخل موضوع البانر (anime, lofi, gaming, cyberpunk, nature...)')
@@ -171,7 +175,7 @@ const client = new Client({
 
 client.once('clientReady', async readyClient => {
   console.log(`🤖 Logged in as ${readyClient.user.tag}!`);
-  console.log('🌟 High-Speed Local JSON Banner Bot ready.');
+  console.log('🌟 Custom JSON Database Banner Bot is ready.');
   readyClient.user.setActivity('/banner [search_term]', { type: 2 });
   await registerCommands();
 });
@@ -211,6 +215,7 @@ client.on('interactionCreate', async interaction => {
             .setDescription(`محفوظ من **${interaction.guild?.name || 'Discord'}** في <#${interaction.channelId}>`)
             .setFooter({ text: 'Discord Banner Bot' })
             .setTimestamp();
+
           await interaction.user.send({ embeds: [dmEmbed] });
           await interaction.editReply({ content: '✅ تم إرسال البانر إلى رسائلك الخاصة!' });
         } catch {
@@ -252,9 +257,11 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
+// ─── Graceful Shutdown ────────────────────────────────────────────────────────
 process.on('SIGINT', () => { client.destroy(); process.exit(0); });
 process.on('SIGTERM', () => { client.destroy(); process.exit(0); });
 
+// ─── Login ───────────────────────────────────────────────────────────────────
 client.login(DISCORD_TOKEN).catch(err => {
   console.error('❌ Discord login failed:', err.message);
   process.exit(1);
