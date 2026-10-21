@@ -3,7 +3,8 @@ import {
   GatewayIntentBits,
   Collection,
   ActivityType,
-  Events
+  Events,
+  MessageFlags
 } from 'discord.js';
 import dotenv from 'dotenv';
 import http from 'http';
@@ -86,7 +87,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         if (!pair) {
           return interaction.followUp({
             content: '⚠️ لا توجد صور متوفرة في هذه الفئة حالياً.',
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
           });
         }
 
@@ -101,7 +102,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       // Handle "Send to DM 📩" button
       if (customId.startsWith('matching_dm_')) {
         const pairId = parseInt(customId.replace('matching_dm_', ''), 10);
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const pair = dbService.getPairById(pairId);
 
@@ -133,7 +134,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const errorMessage = {
       content: '❌ حدث خطأ غير متوقع أثناء معالجة هذا الإجراء!',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     };
 
     if (interaction.replied || interaction.deferred) {
