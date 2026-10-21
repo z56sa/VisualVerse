@@ -7,24 +7,24 @@ import { loadFeedsConfig } from '../services/storageService.js';
 export const latestNewsCommand = {
   data: new SlashCommandBuilder()
     .setName('latest-news')
-    .setDescription('جلب وتلخيص أحدث 3 أخبار فوراً بالذكاء الاصطناعي (بالعربية أو الإنجليزية)')
+    .setDescription('Fetch & summarize the latest 3 news articles with AI | جلب وتلخيص أحدث 3 أخبار')
     .addStringOption(option =>
       option
         .setName('category')
-        .setDescription('اختر تصنيف الأخبار')
+        .setDescription('News category | تصنيف الأخبار')
         .addChoices(
-          { name: '🎮 ألعاب (IGN Gaming)', value: 'gaming' },
-          { name: '💻 تكنولوجيا (The Verge Tech)', value: 'tech' },
-          { name: '🌸 أنمي (Anime News Network)', value: 'anime' }
+          { name: '🎮 Gaming — ألعاب (IGN)', value: 'gaming' },
+          { name: '💻 Tech — تكنولوجيا (The Verge)', value: 'tech' },
+          { name: '🌸 Anime — أنمي (ANN)', value: 'anime' }
         )
     )
     .addStringOption(option =>
       option
         .setName('language')
-        .setDescription('اختر لغة التلخيص')
+        .setDescription('Summary language | لغة التلخيص')
         .addChoices(
           { name: '🇸🇦 العربية (Arabic)', value: 'ar' },
-          { name: '🇺🇸 English (الإنجليزية)', value: 'en' }
+          { name: '🇺🇸 English', value: 'en' }
         )
     ),
 
@@ -35,8 +35,6 @@ export const latestNewsCommand = {
     const selectedLang = interaction.options.getString('language');
     const config = loadFeedsConfig();
     const guildConfig = config[interaction.guildId];
-
-    // اللغة: إما المختارة بالأمر أو المضبوطة بالسيرفر أو الافتراضي 'ar'
     const lang = selectedLang || guildConfig?.language || 'ar';
     const isArabic = lang === 'ar';
 
@@ -55,22 +53,31 @@ export const latestNewsCommand = {
 
     try {
       const feedData = await fetchFeedItems(targetFeedUrl, 3);
+
       if (!feedData.items || feedData.items.length === 0) {
         await interaction.editReply({
-          content: isArabic ? '⚠️ لم يتم العثور على أي أخبار حالياً في المصدر.' : '⚠️ No news items found currently in this feed.'
+          content: isArabic
+            ? '⚠️ لم يتم العثور على أي أخبار حالياً في هذا المصدر.'
+            : '⚠️ No news items found in this feed right now.'
         });
         return;
       }
 
       await interaction.editReply({
         content: isArabic
-          ? `⚡ **جاري معالجة وتلخيص الأخبار من: ${feedData.feedTitle}...**`
-          : `⚡ **Processing and summarizing news from: ${feedData.feedTitle}...**`
+          ? `🤖 **جاري تحليل وتلخيص الأخبار من: ${feedData.feedTitle}...**`
+          : `🤖 **Analyzing and summarizing news from: ${feedData.feedTitle}...**`
       });
 
       for (let i = 0; i < feedData.items.length; i++) {
         const item = feedData.items[i];
-        const aiResult = await summarizeNewsItem(geminiApiKey, item.title, item.contentSnippet, lang);
+
+        const aiResult = await summarizeNewsItem(
+          geminiApiKey,
+          item.title,
+          item.contentSnippet,
+          lang
+        );
 
         const embed = createNewsEmbed({
           title: aiResult.formattedTitle,
@@ -90,9 +97,13 @@ export const latestNewsCommand = {
           await interaction.followUp({ embeds: [embed], components: [row] });
         }
       }
+
     } catch (err) {
+      console.error('[LatestNews] Error:', err);
       await interaction.editReply({
-        content: isArabic ? `❌ تعذر جلب الأخبار: \`${err.message}\`` : `❌ Could not fetch news: \`${err.message}\``
+        content: isArabic
+          ? `❌ تعذر جلب الأخبار: \`${err.message}\``
+          : `❌ Could not fetch news: \`${err.message}\``
       });
     }
   }

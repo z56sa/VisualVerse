@@ -1,32 +1,32 @@
-import { SlashCommandBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder } from 'discord.js';
 import { loadFeedsConfig, saveFeedsConfig } from '../services/storageService.js';
 import { fetchFeedItems } from '../services/feedService.js';
 
 export const setupFeedCommand = {
   data: new SlashCommandBuilder()
     .setName('setup-feed')
-    .setDescription('ربط مصدر أخبار RSS بقناة معينة وتحديد لغة التلخيص (عربي / إنجليزي)')
+    .setDescription('Link an RSS feed to a channel | ربط مصدر RSS بقناة')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addChannelOption(option =>
       option
         .setName('channel')
-        .setDescription('الروم المراد إرسال الأخبار الملخصة إليها')
+        .setDescription('Channel to post news in | الروم المراد إرسال الأخبار إليه')
         .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
         .setRequired(true)
     )
     .addStringOption(option =>
       option
         .setName('url')
-        .setDescription('رابط خلاصة الـ RSS لموقع الأخبار (ألعاب، أنمي، تكنولوجيا...)')
+        .setDescription('RSS feed URL (gaming, anime, tech...) | رابط خلاصة RSS')
         .setRequired(true)
     )
     .addStringOption(option =>
       option
         .setName('language')
-        .setDescription('لغة تلخيص الأخبار (العربية أو الإنجليزية)')
+        .setDescription('Summary language | لغة التلخيص')
         .addChoices(
           { name: '🇸🇦 العربية (Arabic)', value: 'ar' },
-          { name: '🇺🇸 English (الإنجليزية)', value: 'en' }
+          { name: '🇺🇸 English', value: 'en' }
         )
     ),
 
@@ -37,18 +37,14 @@ export const setupFeedCommand = {
     const feedUrl = interaction.options.getString('url', true).trim();
     const language = interaction.options.getString('language') || 'ar';
     const guildId = interaction.guildId;
+    const isArabic = language === 'ar';
 
     try {
       const feedData = await fetchFeedItems(feedUrl, 1);
 
       const config = loadFeedsConfig();
       if (!config[guildId]) {
-        config[guildId] = {
-          channelId: channel.id,
-          language,
-          feeds: [],
-          lastPostedUrls: []
-        };
+        config[guildId] = { channelId: channel.id, language, feeds: [], lastPostedUrls: [] };
       }
 
       config[guildId].channelId = channel.id;
@@ -59,14 +55,46 @@ export const setupFeedCommand = {
 
       saveFeedsConfig(config);
 
-      const langText = language === 'ar' ? 'العربية 🇸🇦' : 'English 🇺🇸';
+      const embed = new EmbedBuilder()
+        .setColor(0x57F287)
+        .setTitle(isArabic ? '✅ تم إعداد FeedPulse بنجاح!' : '✅ FeedPulse Setup Complete!')
+        .addFields(
+          {
+            name: isArabic ? '📌 الروم' : '📌 Channel',
+            value: `<#${channel.id}>`,
+            inline: true
+          },
+          {
+            name: isArabic ? '🗣️ اللغة' : '🗣️ Language',
+            value: isArabic ? 'العربية 🇸🇦' : 'English 🇺🇸',
+            inline: true
+          },
+          {
+            name: isArabic ? '🌐 المصدر' : '🌐 Feed Source',
+            value: feedData.feedTitle || feedUrl,
+            inline: false
+          },
+          {
+            name: isArabic ? '🔗 الرابط' : '🔗 URL',
+            value: `\`${feedUrl}\``,
+            inline: false
+          }
+        )
+        .setDescription(
+          isArabic
+            ? '⚡ سيبدأ البوت بمراقبة المصدر تلقائياً وتلخيص الأخبار الجديدة فور صدورها!'
+            : '⚡ The bot will now monitor this feed and automatically summarize new articles!'
+        )
+        .setFooter({ text: 'FeedPulse • Auto News Aggregator' })
+        .setTimestamp();
 
-      await interaction.editReply({
-        content: `✅ **تم إعداد FeedPulse بنجاح!**\n\n📌 **الروم:** <#${channel.id}>\n🌐 **المصدر:** ${feedData.feedTitle}\n🗣️ **اللغة:** ${langText}\n🔗 **الرابط:** \`${feedUrl}\`\n\nسيبدأ البوت بفحص المصدر تلقائياً وتلخيص الأخبار الجديدة فور صدورها! ⚡`
-      });
+      await interaction.editReply({ embeds: [embed] });
+
     } catch (err) {
       await interaction.editReply({
-        content: `❌ **فشل التحقق من الرابط!**\nتأكد أن الرابط هو خلاصة RSS صالحة.\nتفاصيل الخطأ: \`${err.message}\``
+        content: isArabic
+          ? `❌ **فشل التحقق من الرابط!**\nتأكد أن الرابط خلاصة RSS صالحة.\n\`${err.message}\``
+          : `❌ **Invalid RSS feed URL!**\nMake sure the URL is a valid RSS feed.\n\`${err.message}\``
       });
     }
   }
