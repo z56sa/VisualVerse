@@ -1,187 +1,138 @@
 import axios from 'axios';
 
-const GIPHY_BASE_URL = 'https://api.giphy.com/v1/gifs';
+const PIXABAY_URL = 'https://pixabay.com/api/';
 
 /**
- * فلترة رياضية صارمة جداً للبانرات العريضة فقط
- * ترفض أي صورة إذا كان عرضها أقل من 1.75 ضعف ارتفاعها
- * (تمنع الصور المربعة والشبه مربعة والصور العمودية نهائياً)
+ * نسبة أبعاد البانر الصارمة: عرض / ارتفاع >= 1.7
  */
-const MIN_BANNER_RATIO = 1.75;
+const MIN_BANNER_RATIO = 1.7;
 
 /**
- * قوالب بحث متخصصة في جلب البانرات المتحركة لبروفايلات وسيرفرات ديسكورد
+ * مكتبة موضوعات بانر جمالية احتياطية
  */
-const BANNER_QUERY_TEMPLATES = [
-  query => `${query} discord banner gif`,
-  query => `${query} banner gif`,
-  query => `${query} header landscape gif`,
-  query => `${query} wide header gif`
+const CURATED_BANNER_THEMES = [
+  'anime landscape',
+  'cyberpunk city',
+  'lofi aesthetic',
+  'retrowave synthwave',
+  'japanese aesthetic',
+  'dark fantasy landscape',
+  'space galaxy',
+  'pixel art landscape',
+  'aesthetic nature',
+  'gaming wallpaper'
 ];
 
 /**
- * مكتبة بانرات ديسكورد عريضة وجمالية جاهزة في حال كان البحث نادراً جداً
+ * اختيار عنصر عشوائي من مصفوفة
  */
-const CURATED_DISCORD_BANNERS = [
-  'anime discord banner gif',
-  'lofi anime banner gif',
-  'cyberpunk banner landscape',
-  'pixel art banner gif',
-  'aesthetic discord header gif',
-  'retrowave synthwave banner gif',
-  'galaxy space banner landscape',
-  'japan aesthetic banner gif'
-];
-
-/**
- * اختيار عشوائي من مصفوفة
- * @param {Array} array 
- * @returns {*}
- */
-function pickRandom(array) {
-  if (!Array.isArray(array) || array.length === 0) return null;
-  return array[Math.floor(Math.random() * array.length)];
+function pickRandom(arr) {
+  if (!Array.isArray(arr) || arr.length === 0) return null;
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 
 /**
- * فحص نسبة الأبعاد لضمان أنها بانر أفقي عريض حقيقي
- * @param {Object} item 
- * @returns {boolean}
+ * فحص نسبة الأبعاد الصارمة (>= 1.7) لقبول البانرات العريضة فقط
  */
-export function isRealWideBanner(item) {
-  const original = item?.images?.original;
-  if (!original) return false;
-
-  const width = parseFloat(original.width);
-  const height = parseFloat(original.height);
-
-  if (!width || !height || isNaN(width) || isNaN(height) || height <= 0) {
-    return false;
-  }
-
-  // العرض يجب أن يكون على الأقل 1.75 ضعف الارتفاع
-  const ratio = width / height;
-  return ratio >= MIN_BANNER_RATIO;
+function isWideBanner(width, height) {
+  if (!width || !height || height <= 0) return false;
+  return (width / height) >= MIN_BANNER_RATIO;
 }
 
 /**
- * تنسيق بيانات البانر لرسالة Embed
- * @param {Object} item 
- * @param {string} source 
- * @param {string} displayTerm 
- * @returns {Object}
+ * تنسيق نتيجة Pixabay كهيكل بانر قياسي
  */
-function formatBannerResponse(item, source, displayTerm) {
-  if (!item) return null;
-
-  const bannerUrl = item.images?.original?.url ||
-                    item.images?.downsized_large?.url ||
-                    item.images?.downsized_medium?.url ||
-                    item.url;
-
-  const width = Math.round(parseFloat(item.images?.original?.width || 0));
-  const height = Math.round(parseFloat(item.images?.original?.height || 0));
-  const ratio = (width / height).toFixed(2);
-
+function formatBanner(hit, displayTerm, source) {
   return {
-    id: item.id || 'unknown',
-    title: item.title && item.title.trim().length > 0 ? item.title.trim() : 'Discord Animated Banner',
-    url: bannerUrl,
-    giphyUrl: item.url || 'https://giphy.com',
-    dimensions: width && height ? `${width}x${height}` : 'Wide Banner',
-    ratio: isNaN(ratio) ? 'Wide' : ratio,
+    id: String(hit.id),
+    title: hit.tags ? hit.tags.split(',').slice(0, 4).join(', ') : 'Discord Banner',
+    url: hit.largeImageURL || hit.webformatURL,
+    pageUrl: hit.pageURL || 'https://pixabay.com',
+    dimensions: `${hit.imageWidth}x${hit.imageHeight}`,
+    ratio: (hit.imageWidth / hit.imageHeight).toFixed(2),
     source,
     displayTerm
   };
 }
 
 /**
- * جلب بانر مفاجئ عشوائي
- * @param {string} apiKey 
- * @returns {Promise<Object>}
+ * البحث في Pixabay مع فلترة صارمة للبانرات العريضة
  */
-export async function getSurpriseBanner(apiKey) {
-  const randomTheme = pickRandom(CURATED_DISCORD_BANNERS);
-  return getSmartBanner(apiKey, randomTheme, true);
+async function searchPixabay(apiKey, query, page = 1) {
+  const response = await axios.get(PIXABAY_URL, {
+    params: {
+      key: apiKey,
+      q: query,
+      image_type: 'photo',
+      orientation: 'horizontal', // أفقي فقط
+      per_page: 50,
+      page,
+      safesearch: true,
+      order: 'popular'
+    },
+    timeout: 8000
+  });
+
+  const hits = response.data?.hits;
+  if (!Array.isArray(hits) || hits.length === 0) return [];
+
+  // فلترة صارمة: عرض / ارتفاع >= 1.7
+  return hits.filter(hit =>
+    isWideBanner(hit.imageWidth, hit.imageHeight)
+  );
 }
 
 /**
- * المحرك الرئيسي للبحث عن البانرات العريضة فقط
- * @param {string} apiKey 
- * @param {string} query 
- * @param {boolean} isSurprise 
- * @returns {Promise<Object>}
+ * جلب بانر مفاجئ عشوائي
+ */
+export async function getSurpriseBanner(apiKey) {
+  const theme = pickRandom(CURATED_BANNER_THEMES);
+  return getSmartBanner(apiKey, theme, true);
+}
+
+/**
+ * المحرك الرئيسي: بحث وفلترة البانرات العريضة من Pixabay
  */
 export async function getSmartBanner(apiKey, query, isSurprise = false) {
   const rawTerm = query ? query.trim() : 'anime';
 
-  if (apiKey && apiKey.trim().length > 0) {
-    // نجرب صياغات البحث المتخصصة في البانرات
-    for (const template of BANNER_QUERY_TEMPLATES) {
-      const q = template(rawTerm);
-      try {
-        const offset = Math.floor(Math.random() * 15);
-        const response = await axios.get(`${GIPHY_BASE_URL}/search`, {
-          params: {
-            api_key: apiKey,
-            q,
-            limit: 50, // جلب 50 نتيجة لفحص واختيار البانرات الأفقية الحقيقية
-            offset,
-            rating: 'pg-13',
-            lang: 'en'
-          },
-          timeout: 7000
-        });
+  // صياغات بحث متخصصة في الخلفيات العريضة
+  const queries = rawTerm.toLowerCase().includes('banner') || rawTerm.toLowerCase().includes('landscape')
+    ? [rawTerm, `${rawTerm} wallpaper`]
+    : [`${rawTerm} landscape wallpaper`, `${rawTerm} banner background`, rawTerm];
 
-        const results = response.data?.data;
-        if (Array.isArray(results) && results.length > 0) {
-          // فلترة صارمة: فقط البانرات التي عرضها >= 1.75 من ارتفاعها
-          const wideBanners = results.filter(isRealWideBanner);
-          if (wideBanners.length > 0) {
-            const selected = pickRandom(wideBanners);
-            return formatBannerResponse(selected, isSurprise ? 'surprise' : 'search', rawTerm);
-          }
-        }
-      } catch (err) {
-        console.warn(`Query for banner failed:`, err.message);
-      }
-    }
-
-    // إذا لم يعثر على بانر يطابق الكلمة بالنسبة الصارمة، يجلب بانر جمالي بديل من المكتبة
+  for (const q of queries) {
     try {
-      const fallbackQuery = pickRandom(CURATED_DISCORD_BANNERS);
-      const fallbackRes = await axios.get(`${GIPHY_BASE_URL}/search`, {
-        params: {
-          api_key: apiKey,
-          q: fallbackQuery,
-          limit: 50,
-          offset: Math.floor(Math.random() * 10),
-          rating: 'pg-13'
-        },
-        timeout: 7000
-      });
-
-      const fallbackResults = fallbackRes.data?.data;
-      if (Array.isArray(fallbackResults) && fallbackResults.length > 0) {
-        const validWide = fallbackResults.filter(isRealWideBanner);
-        if (validWide.length > 0) {
-          const selected = pickRandom(validWide);
-          return formatBannerResponse(selected, 'fallback', fallbackQuery.replace(' discord banner gif', ''));
-        }
+      const page = Math.floor(Math.random() * 3) + 1; // صفحات عشوائية لتنويع النتائج
+      const results = await searchPixabay(apiKey, q, page);
+      if (results.length > 0) {
+        return formatBanner(pickRandom(results), rawTerm, isSurprise ? 'surprise' : 'search');
       }
-    } catch (e) {
-      console.warn('Fallback banner search error:', e.message);
+    } catch (err) {
+      console.warn(`[Pixabay] Query failed for "${q}":`, err.message);
     }
   }
 
-  // بانر طوارئ ألترا وايد عالي الدقة (نسبة 2.5)
+  // بحث احتياطي من المكتبة المُنسقة
+  for (const theme of CURATED_BANNER_THEMES.slice(0, 4)) {
+    try {
+      const results = await searchPixabay(apiKey, theme);
+      if (results.length > 0) {
+        return formatBanner(pickRandom(results), theme, 'fallback');
+      }
+    } catch (e) {
+      console.warn('[Pixabay] Fallback search error:', e.message);
+    }
+  }
+
+  // بانر طوارئ موثوق
   return {
-    id: 'emergency-banner',
-    title: 'Aesthetic Cyber Cityscape Banner',
-    url: 'https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif',
-    giphyUrl: 'https://giphy.com',
-    dimensions: '1000x400',
-    ratio: '2.50',
+    id: 'emergency',
+    title: 'Aesthetic Landscape Banner',
+    url: 'https://cdn.pixabay.com/photo/2022/01/11/21/48/background-6931101_1280.jpg',
+    pageUrl: 'https://pixabay.com',
+    dimensions: '1280x500',
+    ratio: '2.56',
     source: 'emergency_fallback',
     displayTerm: rawTerm
   };

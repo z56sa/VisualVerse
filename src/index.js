@@ -6,34 +6,33 @@ import { handleButtonInteraction } from './handlers/buttonHandler.js';
 
 dotenv.config();
 
-// ─── Health Check Server for Render ──────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 const server = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ status: 'ok', bot: client.user?.tag || 'connecting' }));
 });
-server.listen(PORT, () => console.log(`🌐 Health check server listening on port ${PORT}`));
+server.listen(PORT, () => console.log(`🌐 Health check server on port ${PORT}`));
 
-// ─── Discord Client ───────────────────────────────────────────────────────────
-const { DISCORD_TOKEN } = process.env;
+const { DISCORD_TOKEN, PIXABAY_API_KEY } = process.env;
 
 if (!DISCORD_TOKEN) {
-  console.error('❌ Missing DISCORD_TOKEN in environment variables!');
+  console.error('❌ Missing DISCORD_TOKEN!');
   process.exit(1);
+}
+if (!PIXABAY_API_KEY) {
+  console.warn('⚠️ PIXABAY_API_KEY is not set! Banners may not load.');
 }
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages]
 });
 
-// Register commands
 client.commands = new Collection();
 client.commands.set(bannerCommand.data.name, bannerCommand);
 
-// ─── Events ──────────────────────────────────────────────────────────────────
 client.once('clientReady', readyClient => {
   console.log(`🤖 Logged in as ${readyClient.user.tag}!`);
-  console.log('🌟 Pinterest Animated Banner Bot is ready.');
+  console.log('🌟 Discord Animated Banner Bot ready.');
   readyClient.user.setActivity('/banner [search_term]', { type: 2 });
 });
 
@@ -42,17 +41,15 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isChatInputCommand()) {
       const command = client.commands.get(interaction.commandName);
       if (!command) return;
-      await command.execute(interaction);
+      await command.execute(interaction, PIXABAY_API_KEY);
       return;
     }
-
     if (interaction.isButton()) {
-      await handleButtonInteraction(interaction);
-      return;
+      await handleButtonInteraction(interaction, PIXABAY_API_KEY);
     }
   } catch (error) {
     console.error('Interaction error:', error);
-    const msg = { content: '❌ حدث خطأ أثناء المعالجة، يرجى المحاولة مرة أخرى!', flags: 64 };
+    const msg = { content: '❌ حدث خطأ، يرجى المحاولة مرة أخرى!', flags: 64 };
     if (interaction.deferred || interaction.replied) {
       await interaction.followUp(msg).catch(() => {});
     } else {
@@ -61,11 +58,9 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-// ─── Graceful Shutdown ────────────────────────────────────────────────────────
 process.on('SIGINT', () => { client.destroy(); process.exit(0); });
 process.on('SIGTERM', () => { client.destroy(); process.exit(0); });
 
-// ─── Connect to Discord ───────────────────────────────────────────────────────
 client.login(DISCORD_TOKEN).catch(err => {
   console.error('❌ Discord login failed:', err.message);
   process.exit(1);

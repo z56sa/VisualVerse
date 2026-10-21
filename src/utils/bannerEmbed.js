@@ -8,19 +8,19 @@ import {
 export function createBannerEmbed(bannerData, user) {
   const embed = new EmbedBuilder()
     .setTitle(bannerData.title.length > 250 ? `${bannerData.title.substring(0, 247)}...` : bannerData.title)
-    .setURL(bannerData.pinterestUrl || 'https://www.pinterest.com')
+    .setURL(bannerData.pageUrl || 'https://pixabay.com')
     .setImage(bannerData.url)
-    .setColor(0xe60023) // لون Pinterest الأحمر
+    .setColor(0x1db954)
     .setFooter({
-      text: `📌 Pinterest Banner (${bannerData.dimensions}) • Requested by ${user.username}`,
+      text: `🖼️ Banner (${bannerData.dimensions}) • ${bannerData.ratio}:1 • Requested by ${user.username}`,
       iconURL: user.displayAvatarURL()
     })
     .setTimestamp();
 
   if (bannerData.source === 'surprise') {
-    embed.setDescription('🎲 **بانر ديسكورد متحرك عشوائي (Random Discord Banner)**');
+    embed.setDescription('🎲 **بانر ديسكورد عريض عشوائي**');
   } else if (bannerData.source === 'fallback') {
-    embed.setDescription(`🎨 **بانر عريض بديل لـ:** \`${bannerData.displayTerm}\``);
+    embed.setDescription(`🎨 **بانر جمالي عريض بديل لـ:** \`${bannerData.displayTerm}\``);
   } else {
     embed.setDescription(`🖼️ **بانر ديسكورد عريض لـ:** **${bannerData.displayTerm}**`);
   }
@@ -30,16 +30,11 @@ export function createBannerEmbed(bannerData, user) {
 
 export function parseBannerCustomId(customId) {
   const parts = customId.split('|');
-  return {
-    action: parts[0] || '',
-    userId: parts[1] || '',
-    term: parts.slice(2).join('|') || ''
-  };
+  return { action: parts[0] || '', userId: parts[1] || '', term: parts.slice(2).join('|') || '' };
 }
 
 export function buildBannerCustomId(action, term, userId) {
-  const cleanTerm = (term || '').replace(/\|/g, '').substring(0, 45);
-  return `${action}|${userId}|${cleanTerm}`;
+  return `${action}|${userId}|${(term || '').replace(/\|/g, '').substring(0, 45)}`;
 }
 
 export function createBannerActionRow(term, userId) {
