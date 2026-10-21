@@ -2,6 +2,7 @@ import http from 'http';
 import { Client, GatewayIntentBits, Collection } from 'discord.js';
 import dotenv from 'dotenv';
 import { gifCommand } from './commands/gif.js';
+import { bannerCommand } from './commands/banner.js';
 import { handleButtonInteraction } from './handlers/buttonHandler.js';
 
 dotenv.config();
@@ -44,12 +45,13 @@ const client = new Client({
 // Setup commands collection
 client.commands = new Collection();
 client.commands.set(gifCommand.data.name, gifCommand);
+client.commands.set(bannerCommand.data.name, bannerCommand);
 
 // Ready event
 client.once('ready', (readyClient) => {
   console.log(`🤖 Logged in as ${readyClient.user.tag}!`);
-  console.log(`🌟 GIF Bot ready to serve unlimited GIFs.`);
-  readyClient.user.setActivity('/gif [search_term]', { type: 2 }); // Listening to /gif
+  console.log(`🌟 GIF & Animated Banner Bot ready.`);
+  readyClient.user.setActivity('/banner & /gif', { type: 2 }); // Listening to commands
 });
 
 // Interaction listener
