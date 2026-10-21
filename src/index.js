@@ -9,6 +9,9 @@ import { checkFeedsAndBroadcast } from './services/autoFeedService.js';
 
 dotenv.config();
 
+// إصدار الكود للتحقق من النسخة النشطة على Render
+export const BOT_BUILD_VERSION = 'v2.5-arabic-guaranteed';
+
 // ─── Health Check Server for Render ──────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 const server = http.createServer((req, res) => {
@@ -16,10 +19,11 @@ const server = http.createServer((req, res) => {
   res.end(JSON.stringify({
     status: 'ok',
     bot: client.user?.tag || 'connecting',
-    service: 'FeedPulse AI News Aggregator'
+    service: 'FeedPulse AI News Aggregator',
+    version: BOT_BUILD_VERSION
   }));
 });
-server.listen(PORT, () => console.log(`🌐 FeedPulse Health check server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🌐 FeedPulse Health check server running on port ${PORT} [${BOT_BUILD_VERSION}]`));
 
 // ─── Environment Variables ────────────────────────────────────────────────────
 const { DISCORD_TOKEN, GEMINI_API_KEY } = process.env;
@@ -50,7 +54,7 @@ client.commands.set(setLanguageCommand.data.name, setLanguageCommand);
 
 // ─── Ready Event & Background Poller ─────────────────────────────────────────
 client.once('clientReady', async readyClient => {
-  console.log(`🤖 Logged in as ${readyClient.user.tag}!`);
+  console.log(`🤖 Logged in as ${readyClient.user.tag}! [Build: ${BOT_BUILD_VERSION}]`);
   console.log('⚡ FeedPulse AI News Aggregator Bot is active & running.');
   readyClient.user.setActivity('📰 تلخيص الأخبار بالذكاء الاصطناعي', { type: 3 }); // Watching
 
