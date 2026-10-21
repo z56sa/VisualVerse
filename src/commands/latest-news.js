@@ -25,8 +25,9 @@ export const latestNewsCommand = {
     const category = interaction.options.getString('category');
     const config = loadFeedsConfig();
     const guildConfig = config[interaction.guildId];
-    // اللغة تعتمد حصراً على لغة السيرفر المحددة عبر /set-language (الافتراضي: عربي)
-    const lang = guildConfig?.language || 'ar';
+    
+    // الافتراضي هو العربية دائماً إلا إذا اختار الإنجليزية صراحة
+    const lang = (guildConfig?.language === 'en') ? 'en' : 'ar';
     const isArabic = lang === 'ar';
 
     let targetFeedUrl = null;

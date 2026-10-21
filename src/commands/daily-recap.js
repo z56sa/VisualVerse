@@ -13,8 +13,9 @@ export const dailyRecapCommand = {
 
     const config = loadFeedsConfig();
     const guildConfig = config[interaction.guildId];
-    // اللغة تعتمد حصراً على لغة السيرفر المحددة في أمر /set-language (الافتراضي: عربي)
-    const lang = guildConfig?.language || 'ar';
+    
+    // إذا لم تكن لغة السيرفر مضبوطة بالإنجليزية صراحة، الافتراضي هو العربية الفصحى دائماً
+    const lang = (guildConfig?.language === 'en') ? 'en' : 'ar';
     const isArabic = lang === 'ar';
 
     const feedsToScan = (guildConfig && guildConfig.feeds?.length > 0)
@@ -48,12 +49,7 @@ export const dailyRecapCommand = {
         return;
       }
 
-      await interaction.editReply({
-        content: isArabic
-          ? `🤖 **جاري تحليل وتلخيص ${allNews.length} أخبار بالذكاء الاصطناعي...**`
-          : `🤖 **Analyzing and summarizing ${allNews.length} news stories with AI...**`
-      });
-
+      // استدعاء محرك التلخيص والترجمة
       const recapText = await generateDailyRecapWithLang(geminiApiKey, allNews, lang);
 
       const recapEmbed = new EmbedBuilder()
