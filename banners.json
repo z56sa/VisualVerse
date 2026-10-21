@@ -1,42 +1,17 @@
 {
   "anime": [
     {
-      "title": "Anime Scenic Horizon Sunset",
-      "url": "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif",
-      "ratio": "2.50"
-    },
-    {
-      "title": "Anime Retro Neon City Skyline",
-      "url": "https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif",
-      "ratio": "2.40"
-    },
-    {
-      "title": "Anime Cyberpunk Night Drive",
-      "url": "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif",
-      "ratio": "2.00"
-    },
-    {
-      "title": "Anime Sunset Purple Clouds",
-      "url": "https://media.giphy.com/media/3o7TKTDnUxE0g2fSE8/giphy.gif",
-      "ratio": "2.40"
-    },
-    {
-      "title": "Anime Night Sky Starfall",
-      "url": "https://media.giphy.com/media/26AHONQ79FdWZhAI0/giphy.gif",
-      "ratio": "2.00"
-    },
-    {
-      "title": "Tokyo Rainy Street Neon Lights",
+      "title": "Tokyo City Neon Night",
       "url": "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=1600&h=600&fit=crop&q=80",
       "ratio": "2.67"
     },
     {
-      "title": "Japanese Torii Gate Sunset Landscape",
+      "title": "Japanese Torii Gate Sunset",
       "url": "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1600&h=600&fit=crop&q=80",
       "ratio": "2.67"
     },
     {
-      "title": "Mount Fuji Blossom Horizon",
+      "title": "Mount Fuji Blossom Skyline",
       "url": "https://images.unsplash.com/photo-1528164344705-475426879c0d?w=1600&h=600&fit=crop&q=80",
       "ratio": "2.67"
     },
@@ -46,108 +21,88 @@
       "ratio": "2.67"
     },
     {
-      "title": "Anime Fantasy Castle Stars",
+      "title": "Fantasy Castle Starlight Horizon",
       "url": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600&h=600&fit=crop&q=80",
+      "ratio": "2.67"
+    },
+    {
+      "title": "Shinjuku Night Street Atmosphere",
+      "url": "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=1600&h=600&fit=crop&q=80",
+      "ratio": "2.67"
+    },
+    {
+      "title": "Anime Aesthetic Purple Sky Clouds",
+      "url": "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=1600&h=600&fit=crop&q=80",
+      "ratio": "2.67"
+    },
+    {
+      "title": "Japanese Bamboo Forest Morning Path",
+      "url": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600&h=600&fit=crop&q=80",
       "ratio": "2.67"
     }
   ],
   "lofi": [
-    {
-      "title": "Lofi Chill Sunset Horizon",
-      "url": "https://media.giphy.com/media/3o7TKTDnUxE0g2fSE8/giphy.gif",
-      "ratio": "2.40"
-    },
-    {
-      "title": "Lofi Cozy City Night Waves",
-      "url": "https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif",
-      "ratio": "2.40"
-    },
-    {
-      "title": "Lofi Aesthetic Rain Alley",
-      "url": "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif",
-      "ratio": "2.00"
-    },
-    {
-      "title": "Lofi Night Bridge Atmosphere",
-      "url": "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1600&h=600&fit=crop&q=80",
-      "ratio": "2.67"
-    },
-    {
-      "title": "Cozy Vinyl Record Warm Aesthetic",
-      "url": "https://images.unsplash.com/photo-1539185441755-769473a23570?w=1600&h=600&fit=crop&q=80",
-      "ratio": "2.67"
-    },
     {
       "title": "Midnight City Reflection Water",
       "url": "https://images.unsplash.com/photo-1514565131-fce0801e5785?w=1600&h=600&fit=crop&q=80",
       "ratio": "2.67"
     },
     {
-      "title": "Warm Autumn Coffee Shop Mood",
+      "title": "Cozy Warm Coffee Shop Aesthetic",
       "url": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1600&h=600&fit=crop&q=80",
       "ratio": "2.67"
     },
     {
-      "title": "Lofi Golden Hour Skyline",
+      "title": "Lofi Night Bridge Rain Atmosphere",
+      "url": "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1600&h=600&fit=crop&q=80",
+      "ratio": "2.67"
+    },
+    {
+      "title": "Lofi Vinyl Record Calm Mood",
+      "url": "https://images.unsplash.com/photo-1539185441755-769473a23570?w=1600&h=600&fit=crop&q=80",
+      "ratio": "2.67"
+    },
+    {
+      "title": "Lofi Golden Hour Skyline Sunset",
       "url": "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=1600&h=600&fit=crop&q=80",
+      "ratio": "2.67"
+    },
+    {
+      "title": "Chill Bedroom Window Starlight",
+      "url": "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1600&h=600&fit=crop&q=80",
       "ratio": "2.67"
     }
   ],
   "gaming": [
     {
-      "title": "Cyberpunk Neon Grid Highway",
-      "url": "https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif",
-      "ratio": "2.40"
-    },
-    {
-      "title": "Retro Synth Arcade Landscape",
-      "url": "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif",
-      "ratio": "2.50"
-    },
-    {
-      "title": "Futuristic Neon Horizon",
-      "url": "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif",
-      "ratio": "2.00"
-    },
-    {
-      "title": "RGB Gaming Setup Aesthetic",
+      "title": "RGB Gaming Setup Neon Atmosphere",
       "url": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1600&h=600&fit=crop&q=80",
       "ratio": "2.67"
     },
     {
-      "title": "Futuristic VR Cyber Grid",
+      "title": "Futuristic VR Cyber Grid Arena",
       "url": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1600&h=600&fit=crop&q=80",
       "ratio": "2.67"
     },
     {
-      "title": "Dark Esports Arena Neon",
+      "title": "Dark Esports Neon Stage",
       "url": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=1600&h=600&fit=crop&q=80",
       "ratio": "2.67"
     },
     {
-      "title": "Retro Arcade Machine Hall",
+      "title": "Retro Arcade Machine Game Hall",
       "url": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1600&h=600&fit=crop&q=80",
+      "ratio": "2.67"
+    },
+    {
+      "title": "Cyber Battleground Neon Glow",
+      "url": "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1600&h=600&fit=crop&q=80",
       "ratio": "2.67"
     }
   ],
   "cyberpunk": [
     {
-      "title": "Cyberpunk Neon Cityscape Skyline",
-      "url": "https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif",
-      "ratio": "2.40"
-    },
-    {
-      "title": "Aesthetic Cyber Rain Reflections",
-      "url": "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif",
-      "ratio": "2.00"
-    },
-    {
-      "title": "Synthwave Horizon Sun",
-      "url": "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif",
-      "ratio": "2.50"
-    },
-    {
-      "title": "Neo Tokyo Alley Rain Neon",
+      "title": "Neo Tokyo Alley Rain Neon Reflections",
       "url": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1600&h=600&fit=crop&q=80",
       "ratio": "2.67"
     },
@@ -157,29 +112,24 @@
       "ratio": "2.67"
     },
     {
-      "title": "Cyber Light Stream Dark",
+      "title": "Cyber Light Stream Dark Speed",
       "url": "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=1600&h=600&fit=crop&q=80",
+      "ratio": "2.67"
+    },
+    {
+      "title": "Cyberpunk Neon Blue & Pink Horizon",
+      "url": "https://images.unsplash.com/photo-1563089145-599997674d42?w=1600&h=600&fit=crop&q=80",
       "ratio": "2.67"
     }
   ],
   "nature": [
     {
-      "title": "Starry Night Galaxy Aurora",
-      "url": "https://media.giphy.com/media/26AHONQ79FdWZhAI0/giphy.gif",
-      "ratio": "2.00"
-    },
-    {
-      "title": "Purple Sunset Ocean Horizon",
-      "url": "https://media.giphy.com/media/3o7TKTDnUxE0g2fSE8/giphy.gif",
-      "ratio": "2.40"
-    },
-    {
-      "title": "Mountain Peaks Majestic Sunset",
+      "title": "Mountain Peaks Majestic Sunset Panorama",
       "url": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&h=600&fit=crop&q=80",
       "ratio": "2.67"
     },
     {
-      "title": "Forest Fog Twilight Mist",
+      "title": "Forest Fog Twilight Mist Trees",
       "url": "https://images.unsplash.com/photo-1448375240586-882707db888b?w=1600&h=600&fit=crop&q=80",
       "ratio": "2.67"
     },
@@ -189,7 +139,7 @@
       "ratio": "2.67"
     },
     {
-      "title": "Milky Way Galaxy Desert Night",
+      "title": "Milky Way Galaxy Desert Night Skyline",
       "url": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600&h=600&fit=crop&q=80",
       "ratio": "2.67"
     }
