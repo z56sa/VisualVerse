@@ -1,16 +1,18 @@
+# ════════════════════════════════════════════════════
+# VisualVerse — Render Deployment Configuration
+# ════════════════════════════════════════════════════
 services:
   - type: web
-    name: visualverse-bot
+    name: visualverse
     env: node
+    region: frankfurt       # أقرب منطقة للمنطقة العربية
     plan: free
-    buildCommand: npm install && node src/deploy-commands.js
-    startCommand: node src/index.js
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
-      - key: DISCORD_TOKEN
-        sync: false
-      - key: CLIENT_ID
-        sync: false
-      - key: GUILD_ID
-        sync: false
+      - key: NODE_ENV
+        value: production
       - key: PORT
-        value: 10000
+        value: 10000         # Render يستخدم 10000 افتراضياً
+    healthCheckPath: /api/stats
+    autoDeploy: true

@@ -1,109 +1,108 @@
-# 🌌 VisualVerse - Discord Media & Matching Suite
+# VisualVerse 🎨
 
-بوت ديسكورد متكامل واحترافي لجلب وتنسيق صور البروفايل، البنرات، ومقاطع الفيديو بجودة عالية، مع نظام تخزين وإدارة كامل للثنائيات المتناسقة (Matching Avatars & Banners).
+> **Matching Avatars & Banners Explorer** — تصفح وحمّل صور البروفايل والبنرات المتطابقة بجودة HD
 
----
-
-## 🌟 الميزات الرئيسية
-
-1. **🎨 أمر الثنائيات المتطابقة (`/matching`):**
-   - اختيار فئات متنوعة: (أنمي، كبلز، جمالي وفخم Aesthetic، ألعاب وجيمينج).
-   - عرض النتائج في Embed أنيق بجودة عالية (1024px) يحتوي على البنر والافتار المتناسق.
-   - أزرار تفاعلية مدمجة:
-     - 🔄 **[صورة أخرى]**: توليد ثنائي جديد عشوائي دون الحاجة لإعادة كتابة الأمر.
-     - 📥 **[تحميل افتار HD]**: فتح وتحميل الصورة الأصلية بجودة فائقة.
-     - 📥 **[تحميل بنر HD]**: فتح وتحميل البنر المتطابق بجودة كاملة.
-     - 📩 **[إرسال للخاص]**: إرسال الثنائي مباشرة إلى رسائل المستخدم الخاصة (DM).
-
-2. **👤 أمر وسائط المستخدمين (`/get-media`):**
-   - جلب وتنزيل الافتار والبنر المخصص لأي عضو داخل السيرفر عن طريق المنشن.
-   - إمكانية جلب وسائط أي حساب ديسكورد عبر **User ID** حتى لو لم يكن العضو متواجداً في السيرفر!
-   - أزرار مباشرة لتحميل الافتار والبنر بدقة 1024px.
-
-3. **🎬 أمر تنزيل المقاطع (`/download-video`):**
-   - استخراج وتنزيل المقاطع مباشرة من TikTok, Instagram Reels, YouTube Shorts, Twitter/X.
-   - إرسال الفيديو كملف مدمج يمكن تشغيله مباشرة داخل شات ديسكورد.
-   - دعم التنزيل المباشر للأحجام الكبيرة مع بطاقة تفاصيل كاملة (العنوان، الناشر، والحجم).
-
-4. **⚡ إدارة الثنائيات للأدمن (`/admin-pair`):**
-   - `/admin-pair add`: إضافة ثنائيات متناسقة جديدة بسهولة إلى قاعدة البيانات.
-   - `/admin-pair stats`: استعراض إجمالي العناصر وتوزيعها حسب كل فئة.
-   - `/admin-pair delete`: حذف أي ثنائي عبر المعرف (ID).
-
-5. **🛡️ هيكلية نظيفة وقاعدة بيانات مدمجة:**
-   - مبني بالكامل على **discord.js v14** مع هندسة نظيفة (Clean Architecture).
-   - قاعدة بيانات سريعة **SQLite (better-sqlite3)** تخزن البيانات تلقائياً وتدعم مئات الآلاف من الثنائيات.
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
 ---
 
-## 📁 هيكلية المشروع (Project Architecture)
+## ✨ المميزات
+
+- 🌙 **Dark Mode** عصري ومتجاوب مع جميع الأجهزة
+- 🖼️ **شبكة كروت** تعرض Avatar 1 + Avatar 2 + Banner لكل ثنائي
+- ⬇️ **تحميل HD** مباشر لكل صورة على حدة أو الكل دفعة واحدة
+- 🔗 **نسخ الروابط** بنقرة واحدة
+- 🎲 **ثنائي عشوائي** من أي تصنيف
+- 🔍 **بحث فوري** + فلترة بالتصنيفات
+- 📋 **قائمة / شبكة** — وضعا العرض
+- 🔗 **مشاركة** برابط مباشر قابل للنسخ
+
+## 📁 هيكل المشروع
 
 ```
 VisualVerse/
+├── server.js           # Express.js backend
+├── package.json
+├── render.yaml         # Render deployment config
+├── .gitignore
+├── README.md
 ├── data/
-│   └── visualverse.sqlite      # قاعدة بيانات SQLite للثنائيات
-├── src/
-│   ├── commands/
-│   │   ├── matching.js         # أمر /matching مع الأزرار التفاعلية
-│   │   ├── get-media.js        # أمر /get-media لجلب بروفايلات الأعضاء
-│   │   ├── download-video.js   # أمر /download-video لتنزيل مقاطع الفيديو
-│   │   └── admin-pair.js       # أمر /admin-pair لإدارة وتخزين الثنائيات
-│   ├── services/
-│   │   ├── database.js         # محرك قاعدة البيانات SQLite والعمليات التخزينية
-│   │   └── videoDownloader.js  # خدمة معالجة واستخراج روابط وبايتات الفيديو
-│   ├── utils/
-│   │   └── embedBuilder.js     # منسق الـ Embeds والأزرار والتصميم الجمالي
-│   ├── deploy-commands.js      # سكريبت تسجيل ونشر أوامر السلاش في ديسكورد
-│   └── index.js                # ملف تشغيل البوت الرئيسي ومعالج التفاعلات
-├── .env.example                # نموذج المتغيرات البيئية
-├── package.json                # التبعيات والتشغيل
-└── README.md                   # دليل الاستخدام والتثبيت
+│   └── matching.json   # بيانات الثنائيات
+└── public/
+    └── index.html      # Frontend (HTML + Tailwind + JS)
 ```
 
----
+## 🚀 تشغيل محلي
 
-## 🚀 طريقة التثبيت والتشغيل (Setup Guide)
-
-### 1. المتطلبات:
-- تثبيت [Node.js](https://nodejs.org/) (الإصدار 18 أو أحدث).
-- إنشاء تطبيق وبوت في [Discord Developer Portal](https://discord.com/developers/applications).
-
-### 2. تثبيت الحزم (Dependencies):
-افتح موجه الأوامر داخل مجلد المشروع ونفذ:
 ```bash
+# تثبيت الاعتماديات
 npm install
-```
 
-### 3. إعداد ملف البيئة (`.env`):
-انسخ ملف `.env.example` إلى `.env` وقم بملء البيانات:
-```env
-DISCORD_TOKEN=your_bot_token_here
-CLIENT_ID=your_application_id_here
+# تشغيل بوضع التطوير
+npm run dev
 
-# (اختياري) ضع معرف سيرفرك للتجربة الفورية، أو اتركه فارغاً لتسجيل الأوامر عالمياً
-GUILD_ID=
-```
-
-> 💡 **ملاحظة صلاحيات البوت:**
-> تأكد من تفعيل صلاحيات `Server Members Intent` و `Message Content Intent` في صفحة البوت داخل Discord Developer Portal، وتأكد من منحه صلاحية `Send Messages` و `Embed Links` و `Attach Files`.
-
-### 4. تسجيل أوامر السلاش (Slash Commands):
-قم بتسجيل الأوامر في ديسكورد بتشغيل:
-```bash
-npm run deploy-commands
-```
-
-### 5. تشغيل البوت:
-```bash
+# تشغيل في الإنتاج
 npm start
 ```
 
+سيعمل التطبيق على: **http://localhost:3000**
+
+## 📡 API Endpoints
+
+| Method | Endpoint | الوصف |
+|--------|----------|-------|
+| `GET` | `/api/pairs` | كل الثنائيات (مع فلاتر `?category=` و `?q=`) |
+| `GET` | `/api/pairs/random` | ثنائي عشوائي |
+| `GET` | `/api/pairs/:id` | ثنائي محدد |
+| `GET` | `/api/categories` | قائمة التصنيفات مع العدد |
+| `GET` | `/api/stats` | إحصائيات عامة |
+| `POST` | `/api/pairs` | إضافة ثنائي جديد |
+| `DELETE` | `/api/pairs/:id` | حذف ثنائي |
+
+## ➕ إضافة ثنائيات جديدة
+
+افتح [`data/matching.json`](data/matching.json) وأضف كائناً بهذا الشكل:
+
+```json
+{
+  "id": "anime-005",
+  "category": "anime",
+  "title": "اسم الثنائي",
+  "tags": ["وسم1", "وسم2"],
+  "avatar1": {
+    "label": "اسم الصورة 1",
+    "url": "https://رابط-الصورة-المباشر.jpg"
+  },
+  "avatar2": {
+    "label": "اسم الصورة 2",
+    "url": "https://رابط-الصورة-المباشر.jpg"
+  },
+  "banner": {
+    "label": "اسم البنر",
+    "url": "https://رابط-البنر-المباشر.jpg"
+  }
+}
+```
+
+التصنيفات المتاحة: `anime` | `gaming` | `couples` | `aesthetic`
+
+## ☁️ النشر على Render
+
+1. ارفع المشروع على **GitHub**
+2. اذهب إلى [render.com](https://render.com) → **New Web Service**
+3. اربط المستودع
+4. Render سيكتشف `render.yaml` تلقائياً
+5. اضغط **Deploy** ✅
+
+أو استخدم زر **Deploy to Render** أعلاه.
+
+## 🛠️ التقنيات
+
+- **Backend**: Node.js + Express.js
+- **Frontend**: HTML5 + Tailwind CSS (CDN) + Vanilla JS
+- **Storage**: JSON file (`data/matching.json`)
+- **Hosting**: Render (Free tier)
+
 ---
 
-## 🛠️ كيفية إضافة ثنائيات جديدة (Admin Guide)
-
-يمكنك بسهولة تغذية قاعدة بيانات البوت بثنائياتك المفضلة مباشرة عبر الشات باستخدام:
-```
-/admin-pair add title:Gojo & Geto category:anime avatar_url:https://... banner_url:https://...
-```
-وسيتم إدراجها فوراً وتصبح متاحة لجميع أعضاء السيرفر عبر أمر `/matching`.
+صُنع بـ ❤️ — **VisualVerse** &copy; 2025
