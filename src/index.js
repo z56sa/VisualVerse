@@ -1,10 +1,24 @@
 import http from 'http';
-import { Client, GatewayIntentBits, Collection, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import {
+  Client,
+  GatewayIntentBits,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  SlashCommandBuilder,
+  REST,
+  Routes
+} from 'discord.js';
 import dotenv from 'dotenv';
-import { getSmartBanner, getSurpriseBanner } from './services/pinterestService.js';
-import { SlashCommandBuilder, REST, Routes } from 'discord.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ─── Health Check Server for Render ──────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
@@ -14,35 +28,80 @@ const server = http.createServer((req, res) => {
 });
 server.listen(PORT, () => console.log(`🌐 Health check server on port ${PORT}`));
 
-// ─── Discord Client ───────────────────────────────────────────────────────────
-const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID } = process.env;
+// ─── Load Local Banners Database ─────────────────────────────────────────────
+const bannersDbPath = path.join(__dirname, 'banners.json');
+let bannersDb = {};
 
-if (!DISCORD_TOKEN || !CLIENT_ID) {
-  console.error('❌ Missing DISCORD_TOKEN or CLIENT_ID in environment!');
-  process.exit(1);
+try {
+  const data = fs.readFileSync(bannersDbPath, 'utf8');
+  bannersDb = JSON.parse(data);
+  console.log(`✅ Loaded banners database with categories:`, Object.keys(bannersDb));
+} catch (err) {
+  console.error('❌ Failed to load banners.json:', err.message);
+  bannersDb = {
+    anime: [
+      {
+        title: 'Anime Scenic Horizon',
+        url: 'https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif',
+        dimensions: '1000x400',
+        ratio: '2.50'
+      }
+    ]
+  };
 }
 
-// ─── Embed & Button Helpers ───────────────────────────────────────────────────
+// ─── Banner Selection Logic ──────────────────────────────────────────────────
+function pickRandom(arr) {
+  if (!Array.isArray(arr) || arr.length === 0) return null;
+  return arr[Math.floor(Math.random() * arr.length)];
+}
 
+function getBannerByCategory(searchTerm) {
+  const term = (searchTerm || 'anime').toLowerCase().trim();
+  const categories = Object.keys(bannersDb);
+
+  // البحث عن فئة مطابقة
+  let matchedCategory = categories.find(cat => term.includes(cat) || cat.includes(term));
+
+  if (!matchedCategory) {
+    if (term.includes('game') || term.includes('play')) matchedCategory = 'gaming';
+    else if (term.includes('chill') || term.includes('relax')) matchedCategory = 'lofi';
+    else if (term.includes('neon') || term.includes('synth')) matchedCategory = 'cyberpunk';
+    else if (term.includes('sky') || term.includes('star') || term.includes('space')) matchedCategory = 'nature';
+    else matchedCategory = 'anime'; // الافتراضي
+  }
+
+  const categoryList = bannersDb[matchedCategory] || bannersDb.anime || [];
+  const selected = pickRandom(categoryList);
+
+  return {
+    title: selected.title || 'Discord Animated Banner',
+    url: selected.url,
+    dimensions: selected.dimensions || 'Wide Banner',
+    ratio: selected.ratio || '2.00',
+    category: matchedCategory,
+    displayTerm: searchTerm || matchedCategory
+  };
+}
+
+function getSurpriseBanner() {
+  const categories = Object.keys(bannersDb);
+  const randomCat = pickRandom(categories) || 'anime';
+  return getBannerByCategory(randomCat);
+}
+
+// ─── Embed & Action Row Helpers ───────────────────────────────────────────────
 function createBannerEmbed(bannerData, user) {
-  const embed = new EmbedBuilder()
-    .setTitle(bannerData.title.length > 250 ? bannerData.title.substring(0, 247) + '...' : bannerData.title)
-    .setURL(bannerData.pageUrl || 'https://www.pinterest.com')
+  return new EmbedBuilder()
+    .setTitle(bannerData.title)
     .setImage(bannerData.url)
-    .setColor(0xe60023) // Pinterest Red
+    .setColor(0x5865f2) // Discord Blurple
+    .setDescription(`🖼️ **بانر ديسكورد عريض متحرك لـ:** **${bannerData.displayTerm}**`)
     .setFooter({
-      text: `📌 Pinterest Banner (${bannerData.dimensions}) • Ratio ${bannerData.ratio}:1 • By ${user.username}`,
+      text: `Discord Banner (${bannerData.dimensions}) • Ratio ${bannerData.ratio}:1 • By ${user.username}`,
       iconURL: user.displayAvatarURL()
     })
     .setTimestamp();
-
-  const descriptions = {
-    surprise: '🎲 **بانر ديسكورد عريض عشوائي من Pinterest**',
-    fallback: `🎨 **بانر بديل عريض لـ:** \`${bannerData.displayTerm}\``,
-    default: `🖼️ **بانر ديسكورد عريض لـ:** **${bannerData.displayTerm}**`
-  };
-  embed.setDescription(descriptions[bannerData.source] || descriptions.default);
-  return embed;
 }
 
 function buildCustomId(action, term, userId) {
@@ -71,15 +130,21 @@ function createBannerRow(term, userId) {
   );
 }
 
-// ─── Register Slash Commands ──────────────────────────────────────────────────
+// ─── Slash Command Registration ───────────────────────────────────────────────
+const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID } = process.env;
+
+if (!DISCORD_TOKEN || !CLIENT_ID) {
+  console.error('❌ Missing DISCORD_TOKEN or CLIENT_ID in environment variables!');
+  process.exit(1);
+}
 
 async function registerCommands() {
   const bannerCommand = new SlashCommandBuilder()
     .setName('banner')
-    .setDescription('جلب بانر ديسكورد عريض مباشرة من Pinterest')
+    .setDescription('جلب بانر ديسكورد عريض متحرك ومضمون 100%')
     .addStringOption(opt =>
       opt.setName('search_term')
-        .setDescription('أدخل موضوع البانر (anime, cyberpunk, lofi, aesthetic...)')
+        .setDescription('أدخل موضوع البانر (anime, lofi, gaming, cyberpunk, nature...)')
         .setRequired(true)
         .setMaxLength(100)
     )
@@ -100,14 +165,13 @@ async function registerCommands() {
 }
 
 // ─── Discord Client Setup ────────────────────────────────────────────────────
-
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages]
 });
 
 client.once('clientReady', async readyClient => {
   console.log(`🤖 Logged in as ${readyClient.user.tag}!`);
-  console.log('🌟 Pinterest Banner Bot ready.');
+  console.log('🌟 High-Speed Local JSON Banner Bot ready.');
   readyClient.user.setActivity('/banner [search_term]', { type: 2 });
   await registerCommands();
 });
@@ -119,7 +183,7 @@ client.on('interactionCreate', async interaction => {
       const searchTerm = interaction.options.getString('search_term', true);
       await interaction.deferReply();
 
-      const bannerData = await getSmartBanner(searchTerm);
+      const bannerData = getBannerByCategory(searchTerm);
       await interaction.editReply({
         embeds: [createBannerEmbed(bannerData, interaction.user)],
         components: [createBannerRow(searchTerm, interaction.user.id)]
@@ -141,17 +205,16 @@ client.on('interactionCreate', async interaction => {
             return;
           }
           const dmEmbed = new EmbedBuilder()
-            .setTitle(`📌 ${embed.title || 'Pinterest Banner'}`)
-            .setURL(embed.url || 'https://www.pinterest.com')
+            .setTitle(`📌 ${embed.title || 'Discord Banner'}`)
             .setImage(embed.image.url)
-            .setColor(0xe60023)
+            .setColor(0x5865f2)
             .setDescription(`محفوظ من **${interaction.guild?.name || 'Discord'}** في <#${interaction.channelId}>`)
-            .setFooter({ text: 'Pinterest Banner Bot' })
+            .setFooter({ text: 'Discord Banner Bot' })
             .setTimestamp();
           await interaction.user.send({ embeds: [dmEmbed] });
           await interaction.editReply({ content: '✅ تم إرسال البانر إلى رسائلك الخاصة!' });
         } catch {
-          await interaction.editReply({ content: '❌ تعذر الإرسال! تأكد من السماح بالرسائل الخاصة.' });
+          await interaction.editReply({ content: '❌ تعذر الإرسال! تأكد من السماح بالرسائل الخاصة في إعدادات السيرفر.' });
         }
         return;
       }
@@ -159,7 +222,7 @@ client.on('interactionCreate', async interaction => {
       // 🔄 Another Banner
       if (action === 'banner_another') {
         await interaction.deferUpdate();
-        const data = await getSmartBanner(term || 'anime');
+        const data = getBannerByCategory(term || 'anime');
         await interaction.editReply({
           embeds: [createBannerEmbed(data, interaction.user)],
           components: [createBannerRow(term || 'anime', interaction.user.id)]
@@ -170,7 +233,7 @@ client.on('interactionCreate', async interaction => {
       // 🎲 Surprise Banner
       if (action === 'banner_surprise') {
         await interaction.deferUpdate();
-        const data = await getSurpriseBanner();
+        const data = getSurpriseBanner();
         await interaction.editReply({
           embeds: [createBannerEmbed(data, interaction.user)],
           components: [createBannerRow('surprise', interaction.user.id)]

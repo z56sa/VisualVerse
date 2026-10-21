@@ -1,0 +1,108 @@
+{
+  "anime": [
+    {
+      "title": "Anime Scenic Horizon",
+      "url": "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif",
+      "dimensions": "1000x400",
+      "ratio": "2.50"
+    },
+    {
+      "title": "Anime Retro Neon City",
+      "url": "https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif",
+      "dimensions": "960x400",
+      "ratio": "2.40"
+    },
+    {
+      "title": "Anime Sunset Aesthetic",
+      "url": "https://media.giphy.com/media/3o7TKTDnUxE0g2fSE8/giphy.gif",
+      "dimensions": "1200x500",
+      "ratio": "2.40"
+    },
+    {
+      "title": "Anime Night Sky Stars",
+      "url": "https://media.giphy.com/media/26AHONQ79FdWZhAI0/giphy.gif",
+      "dimensions": "800x400",
+      "ratio": "2.00"
+    },
+    {
+      "title": "Anime Cyberpunk Rain",
+      "url": "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif",
+      "dimensions": "1000x500",
+      "ratio": "2.00"
+    }
+  ],
+  "lofi": [
+    {
+      "title": "Lofi Chill Sunset Horizon",
+      "url": "https://media.giphy.com/media/3o7TKTDnUxE0g2fSE8/giphy.gif",
+      "dimensions": "1200x500",
+      "ratio": "2.40"
+    },
+    {
+      "title": "Lofi Cozy City Night",
+      "url": "https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif",
+      "dimensions": "960x400",
+      "ratio": "2.40"
+    },
+    {
+      "title": "Lofi Aesthetic Rain",
+      "url": "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif",
+      "dimensions": "1000x500",
+      "ratio": "2.00"
+    }
+  ],
+  "gaming": [
+    {
+      "title": "Cyberpunk Neon Grid",
+      "url": "https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif",
+      "dimensions": "960x400",
+      "ratio": "2.40"
+    },
+    {
+      "title": "Retro Arcade Landscape",
+      "url": "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif",
+      "dimensions": "1000x400",
+      "ratio": "2.50"
+    },
+    {
+      "title": "Futuristic Cyber Cityscape",
+      "url": "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif",
+      "dimensions": "1000x500",
+      "ratio": "2.00"
+    }
+  ],
+  "cyberpunk": [
+    {
+      "title": "Cyberpunk Neon Horizon",
+      "url": "https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif",
+      "dimensions": "960x400",
+      "ratio": "2.40"
+    },
+    {
+      "title": "Aesthetic Cyber City Rain",
+      "url": "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif",
+      "dimensions": "1000x500",
+      "ratio": "2.00"
+    },
+    {
+      "title": "Synthwave Digital Sun",
+      "url": "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif",
+      "dimensions": "1000x400",
+      "ratio": "2.50"
+    }
+  ],
+  "nature": [
+    {
+      "title": "Starry Galaxy Night Sky",
+      "url": "https://media.giphy.com/media/26AHONQ79FdWZhAI0/giphy.gif",
+      "dimensions": "800x400",
+      "ratio": "2.00"
+    },
+    {
+      "title": "Purple Sunset Horizon",
+      "url": "https://media.giphy.com/media/3o7TKTDnUxE0g2fSE8/giphy.gif",
+      "dimensions": "1200x500",
+      "ratio": "2.40"
+    }
+  ]
+}
