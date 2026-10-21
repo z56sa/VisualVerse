@@ -38,12 +38,33 @@ client.commands.set(downloadVideoCommand.data.name, downloadVideoCommand);
 client.commands.set(adminPairCommand.data.name, adminPairCommand);
 
 // Bot Ready Event
-client.once(Events.ClientReady, (c) => {
+client.once(Events.ClientReady, async (c) => {
   console.log(`===============================================`);
   console.log(`🤖 بوت VisualVerse متصل الآن بنجاح!`);
   console.log(`👤 مسجل باسم: ${c.user.tag}`);
   console.log(`🌐 متواجد في: ${c.guilds.cache.size} سيرفر`);
   console.log(`===============================================`);
+
+  // Auto-sync application slash commands directly with Discord API to instantly purge old FeedPulse/AI commands
+  try {
+    console.log('🔄 جاري تحديث أوامر السلاش واستبدال الأوامر القديمة...');
+    const commandsArray = Array.from(client.commands.values()).map(cmd => cmd.data.toJSON());
+    
+    // 1. Overwrite Global commands with VisualVerse suite commands
+    await c.application.commands.set(commandsArray);
+    console.log('✅ تم مسح أوامر الأخبار القديمة وتثبيت أوامر VisualVerse عالمياً بنجاح!');
+
+    // 2. Also clear any guild-specific commands that might have been registered to servers
+    for (const guild of c.guilds.cache.values()) {
+      try {
+        await guild.commands.set([]);
+      } catch (gErr) {
+        // Ignore guild without command permissions
+      }
+    }
+  } catch (syncErr) {
+    console.error('⚠️ خطأ أثناء تحديث أوامر السلاش تلقائياً:', syncErr.message);
+  }
 
   // Set rich presence
   c.user.setPresence({
