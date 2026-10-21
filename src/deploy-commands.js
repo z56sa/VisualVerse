@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { setupFeedCommand } from './commands/setup-feed.js';
 import { latestNewsCommand } from './commands/latest-news.js';
 import { dailyRecapCommand } from './commands/daily-recap.js';
+import { setLanguageCommand } from './commands/set-language.js';
 
 dotenv.config();
 
@@ -16,7 +17,8 @@ if (!DISCORD_TOKEN || !CLIENT_ID) {
 const commands = [
   setupFeedCommand.data.toJSON(),
   latestNewsCommand.data.toJSON(),
-  dailyRecapCommand.data.toJSON()
+  dailyRecapCommand.data.toJSON(),
+  setLanguageCommand.data.toJSON()
 ];
 
 const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);

@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { setupFeedCommand } from './commands/setup-feed.js';
 import { latestNewsCommand } from './commands/latest-news.js';
 import { dailyRecapCommand } from './commands/daily-recap.js';
+import { setLanguageCommand } from './commands/set-language.js';
 import { checkFeedsAndBroadcast } from './services/autoFeedService.js';
 
 dotenv.config();
@@ -45,6 +46,7 @@ client.commands = new Collection();
 client.commands.set(setupFeedCommand.data.name, setupFeedCommand);
 client.commands.set(latestNewsCommand.data.name, latestNewsCommand);
 client.commands.set(dailyRecapCommand.data.name, dailyRecapCommand);
+client.commands.set(setLanguageCommand.data.name, setLanguageCommand);
 
 // ─── Ready Event & Background Poller ─────────────────────────────────────────
 client.once('clientReady', readyClient => {
