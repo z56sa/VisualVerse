@@ -6,7 +6,7 @@ import {
 } from 'discord.js';
 
 /**
- * Creates the Discord Embed tailored to showcase wide animated banners
+ * بناء رسالة Embed مخصصة بالكامل لاستعراض البانر الأفقي العريض
  * @param {Object} bannerData 
  * @param {import('discord.js').User} user 
  * @returns {EmbedBuilder}
@@ -15,28 +15,28 @@ export function createBannerEmbed(bannerData, user) {
   const embed = new EmbedBuilder()
     .setTitle(bannerData.title.length > 250 ? `${bannerData.title.substring(0, 247)}...` : bannerData.title)
     .setURL(bannerData.giphyUrl)
-    .setImage(bannerData.url) // Sets the banner as the prominent main image
-    .setColor(0x5865f2) // Discord Blurple
+    .setImage(bannerData.url) // يعرض البانر العريض في المنتصف بحجم كامل
+    .setColor(0x5865f2) // لون ديسكورد المميز (Blurple)
     .setFooter({
-      text: `Animated Banner • Requested by ${user.username}`,
+      text: `Discord Banner (${bannerData.dimensions || 'Wide'}) • Requested by ${user.username}`,
       iconURL: user.displayAvatarURL()
     })
     .setTimestamp();
 
   if (bannerData.source === 'surprise') {
-    embed.setDescription('🎲 *Surprise Animated Landscape Banner*');
+    embed.setDescription('🎲 **بانر عريض عشوائي (Discord Profile / Server Banner)**');
   } else if (bannerData.source === 'fallback') {
-    embed.setDescription(`*No exact banner matches for \`${bannerData.displayTerm}\`. Showing an aesthetic wide banner!*`);
+    embed.setDescription(`🎨 **بانر عريض بديل لـ:** \`${bannerData.displayTerm}\``);
   } else {
-    embed.setDescription(`🎨 *Animated Banner for:* **${bannerData.displayTerm}**`);
+    embed.setDescription(`🖼️ **بانر ديسكورد متحرك لـ:** **${bannerData.displayTerm}**`);
   }
 
   return embed;
 }
 
 /**
- * Encodes button customId safely within Discord's 100 char limit
- * @param {string} action - 'banner_another', 'banner_surprise', 'banner_save'
+ * تشفير المعرف المخصص للأزرار بأمان تحت حد 100 حرف
+ * @param {string} action 
  * @param {string} term 
  * @param {string} userId 
  * @returns {string}
@@ -47,7 +47,7 @@ export function buildBannerCustomId(action, term, userId) {
 }
 
 /**
- * Parses customId string
+ * فك تشفير المعرف المخصص
  * @param {string} customId 
  * @returns {{ action: string, userId: string, term: string }}
  */
@@ -61,7 +61,7 @@ export function parseBannerCustomId(customId) {
 }
 
 /**
- * Creates interactive action buttons for the banner response
+ * إنشاء أزرار التحكم الخاصة بالبانرات
  * @param {string} term 
  * @param {string} userId 
  * @returns {ActionRowBuilder<ButtonBuilder>}
@@ -79,7 +79,7 @@ export function createBannerActionRow(term, userId) {
 
   const saveButton = new ButtonBuilder()
     .setCustomId(buildBannerCustomId('banner_save', term, userId))
-    .setLabel('📌 Save')
+    .setLabel('📌 Save to DM')
     .setStyle(ButtonStyle.Success);
 
   return new ActionRowBuilder().addComponents(anotherButton, surpriseButton, saveButton);
