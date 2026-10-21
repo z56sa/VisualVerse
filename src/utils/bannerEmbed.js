@@ -5,20 +5,14 @@ import {
   ButtonStyle
 } from 'discord.js';
 
-/**
- * تصميم رسالة Embed لعرض البانر العريض لبروفايل وسيرفر الديسكورد
- * @param {Object} bannerData 
- * @param {import('discord.js').User} user 
- * @returns {EmbedBuilder}
- */
 export function createBannerEmbed(bannerData, user) {
   const embed = new EmbedBuilder()
     .setTitle(bannerData.title.length > 250 ? `${bannerData.title.substring(0, 247)}...` : bannerData.title)
-    .setURL(bannerData.giphyUrl)
-    .setImage(bannerData.url) // يعرض البانر بشكل أفقي عريض
-    .setColor(0x5865f2) // لون ديسكورد المميز
+    .setURL(bannerData.pinterestUrl || 'https://www.pinterest.com')
+    .setImage(bannerData.url)
+    .setColor(0xe60023) // لون Pinterest الأحمر
     .setFooter({
-      text: `Discord Banner (${bannerData.dimensions || 'Wide'}) • Requested by ${user.username}`,
+      text: `📌 Pinterest Banner (${bannerData.dimensions}) • Requested by ${user.username}`,
       iconURL: user.displayAvatarURL()
     })
     .setTimestamp();
@@ -34,23 +28,6 @@ export function createBannerEmbed(bannerData, user) {
   return embed;
 }
 
-/**
- * تشفير معرف الأزرار
- * @param {string} action 
- * @param {string} term 
- * @param {string} userId 
- * @returns {string}
- */
-export function buildBannerCustomId(action, term, userId) {
-  const cleanTerm = (term || '').replace(/\|/g, '').substring(0, 45);
-  return `${action}|${userId}|${cleanTerm}`;
-}
-
-/**
- * فك تشفير معرف الأزرار
- * @param {string} customId 
- * @returns {{ action: string, userId: string, term: string }}
- */
 export function parseBannerCustomId(customId) {
   const parts = customId.split('|');
   return {
@@ -60,27 +37,24 @@ export function parseBannerCustomId(customId) {
   };
 }
 
-/**
- * أزرار التحكم في البانر
- * @param {string} term 
- * @param {string} userId 
- * @returns {ActionRowBuilder<ButtonBuilder>}
- */
+export function buildBannerCustomId(action, term, userId) {
+  const cleanTerm = (term || '').replace(/\|/g, '').substring(0, 45);
+  return `${action}|${userId}|${cleanTerm}`;
+}
+
 export function createBannerActionRow(term, userId) {
-  const anotherButton = new ButtonBuilder()
-    .setCustomId(buildBannerCustomId('banner_another', term, userId))
-    .setLabel('🔄 Another Banner')
-    .setStyle(ButtonStyle.Primary);
-
-  const surpriseButton = new ButtonBuilder()
-    .setCustomId(buildBannerCustomId('banner_surprise', term, userId))
-    .setLabel('🎲 Surprise Banner')
-    .setStyle(ButtonStyle.Secondary);
-
-  const saveButton = new ButtonBuilder()
-    .setCustomId(buildBannerCustomId('banner_save', term, userId))
-    .setLabel('📌 Save to DM')
-    .setStyle(ButtonStyle.Success);
-
-  return new ActionRowBuilder().addComponents(anotherButton, surpriseButton, saveButton);
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(buildBannerCustomId('banner_another', term, userId))
+      .setLabel('🔄 Another Banner')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId(buildBannerCustomId('banner_surprise', term, userId))
+      .setLabel('🎲 Surprise Banner')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(buildBannerCustomId('banner_save', term, userId))
+      .setLabel('📌 Save to DM')
+      .setStyle(ButtonStyle.Success)
+  );
 }

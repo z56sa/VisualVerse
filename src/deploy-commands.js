@@ -11,7 +11,6 @@ if (!DISCORD_TOKEN || !CLIENT_ID) {
   process.exit(1);
 }
 
-// التركيز حصرياً على أمر البانر /banner
 const commands = [bannerCommand.data.toJSON()];
 const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 
@@ -20,17 +19,11 @@ async function deploy() {
     console.log(`🚀 Refreshing ${commands.length} application (/) commands...`);
 
     if (GUILD_ID && GUILD_ID.trim().length > 0) {
-      console.log(`🎯 Registering slash commands specifically to Guild ID: ${GUILD_ID}`);
-      await rest.put(
-        Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID.trim()),
-        { body: commands }
-      );
+      console.log(`🎯 Registering to Guild ID: ${GUILD_ID}`);
+      await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID.trim()), { body: commands });
     } else {
-      console.log('🌐 Registering slash commands globally...');
-      await rest.put(
-        Routes.applicationCommands(CLIENT_ID),
-        { body: commands }
-      );
+      console.log('🌐 Registering globally...');
+      await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
     }
 
     console.log('✅ Application (/) commands registered successfully!');

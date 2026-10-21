@@ -6,97 +6,67 @@ import { handleButtonInteraction } from './handlers/buttonHandler.js';
 
 dotenv.config();
 
-// Web Server for Render Web Service (binds to process.env.PORT to satisfy health checks)
+// ─── Health Check Server for Render ──────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 const server = http.createServer((req, res) => {
-  if (req.url === '/' || req.url === '/health') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', bot: client.user ? client.user.tag : 'connecting' }));
-  } else {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('Not Found');
-  }
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ status: 'ok', bot: client.user?.tag || 'connecting' }));
 });
+server.listen(PORT, () => console.log(`🌐 Health check server listening on port ${PORT}`));
 
-server.listen(PORT, () => {
-  console.log(`🌐 Health check server listening on port ${PORT}`);
-});
-
-const { DISCORD_TOKEN, GIPHY_API_KEY } = process.env;
+// ─── Discord Client ───────────────────────────────────────────────────────────
+const { DISCORD_TOKEN } = process.env;
 
 if (!DISCORD_TOKEN) {
-  console.error('❌ Missing DISCORD_TOKEN in .env file!');
+  console.error('❌ Missing DISCORD_TOKEN in environment variables!');
   process.exit(1);
 }
 
-// Initialize Discord Client
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.DirectMessages
-  ]
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages]
 });
 
-// Setup commands collection focused strictly on Banner
+// Register commands
 client.commands = new Collection();
 client.commands.set(bannerCommand.data.name, bannerCommand);
 
-// Ready event
-client.once('ready', (readyClient) => {
+// ─── Events ──────────────────────────────────────────────────────────────────
+client.once('clientReady', readyClient => {
   console.log(`🤖 Logged in as ${readyClient.user.tag}!`);
-  console.log(`🌟 Discord Animated Banner Bot ready.`);
+  console.log('🌟 Pinterest Animated Banner Bot is ready.');
   readyClient.user.setActivity('/banner [search_term]', { type: 2 });
 });
 
-// Interaction listener
-client.on('interactionCreate', async (interaction) => {
+client.on('interactionCreate', async interaction => {
   try {
-    // 1. Slash Command Handling
     if (interaction.isChatInputCommand()) {
       const command = client.commands.get(interaction.commandName);
-      if (!command) {
-        console.warn(`No command matching ${interaction.commandName} was found.`);
-        return;
-      }
-
-      await command.execute(interaction, GIPHY_API_KEY);
+      if (!command) return;
+      await command.execute(interaction);
       return;
     }
 
-    // 2. Button Component Handling
     if (interaction.isButton()) {
-      await handleButtonInteraction(interaction, GIPHY_API_KEY);
+      await handleButtonInteraction(interaction);
       return;
     }
   } catch (error) {
-    console.error('Error handling interaction:', error);
-
-    const errorMessage = {
-      content: '❌ حدث خطأ أثناء معالجة الطلب، يرجى المحاولة مرة أخرى!',
-      ephemeral: true
-    };
-
+    console.error('Interaction error:', error);
+    const msg = { content: '❌ حدث خطأ أثناء المعالجة، يرجى المحاولة مرة أخرى!', flags: 64 };
     if (interaction.deferred || interaction.replied) {
-      await interaction.followUp(errorMessage).catch(() => {});
+      await interaction.followUp(msg).catch(() => {});
     } else {
-      await interaction.reply(errorMessage).catch(() => {});
+      await interaction.reply(msg).catch(() => {});
     }
   }
 });
 
-// Graceful shutdown
-process.on('SIGINT', () => {
-  client.destroy();
-  process.exit(0);
-});
+// ─── Graceful Shutdown ────────────────────────────────────────────────────────
+process.on('SIGINT', () => { client.destroy(); process.exit(0); });
+process.on('SIGTERM', () => { client.destroy(); process.exit(0); });
 
-process.on('SIGTERM', () => {
-  client.destroy();
-  process.exit(0);
-});
-
-// Connect bot to Discord
-client.login(DISCORD_TOKEN).catch((err) => {
-  console.error('❌ Discord connection failed:', err.message);
+// ─── Connect to Discord ───────────────────────────────────────────────────────
+client.login(DISCORD_TOKEN).catch(err => {
+  console.error('❌ Discord login failed:', err.message);
   process.exit(1);
 });
