@@ -1,51 +1,50 @@
 import { REST, Routes } from 'discord.js';
 import dotenv from 'dotenv';
-import { setupFeedCommand } from './commands/setup-feed.js';
-import { latestNewsCommand } from './commands/latest-news.js';
-import { dailyRecapCommand } from './commands/daily-recap.js';
-import { setLanguageCommand } from './commands/set-language.js';
+import matchingCommand from './commands/matching.js';
+import getMediaCommand from './commands/get-media.js';
+import downloadVideoCommand from './commands/download-video.js';
+import adminPairCommand from './commands/admin-pair.js';
 
 dotenv.config();
 
-const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID } = process.env;
+const commands = [
+  matchingCommand.data.toJSON(),
+  getMediaCommand.data.toJSON(),
+  downloadVideoCommand.data.toJSON(),
+  adminPairCommand.data.toJSON()
+];
 
-if (!DISCORD_TOKEN || !CLIENT_ID) {
-  console.error('❌ Error: DISCORD_TOKEN and CLIENT_ID are required in .env');
+const token = process.env.DISCORD_TOKEN;
+const clientId = process.env.CLIENT_ID;
+const guildId = process.env.GUILD_ID;
+
+if (!token || !clientId) {
+  console.error('❌ خطأ: يرجى التحقق من توفر DISCORD_TOKEN و CLIENT_ID داخل ملف .env');
   process.exit(1);
 }
 
-const commands = [
-  setupFeedCommand.data.toJSON(),
-  latestNewsCommand.data.toJSON(),
-  dailyRecapCommand.data.toJSON(),
-  setLanguageCommand.data.toJSON()
-];
+const rest = new REST({ version: '10' }).setToken(token);
 
-const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
-
-async function deploy() {
+(async () => {
   try {
-    console.log(`🚀 FeedPulse: Registering ${commands.length} application (/) commands...`);
+    console.log(`🚀 جاري تسجيل ${commands.length} أمر من أوامر السلاش (Slash Commands)...`);
 
-    if (GUILD_ID && GUILD_ID.trim().length > 0) {
-      console.log(`🎯 Registering commands to Guild: ${GUILD_ID}`);
+    if (guildId && guildId.trim() !== '') {
+      // Fast registration to a specific server
       await rest.put(
-        Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID.trim()),
+        Routes.applicationGuildCommands(clientId, guildId.trim()),
         { body: commands }
       );
+      console.log(`✅ تم نشر وتحديث الأوامر بنجاح على السيرفر الخاص: ${guildId}`);
     } else {
-      console.log('🌐 Registering commands globally across all Discord servers...');
+      // Global registration (across all Discord servers)
       await rest.put(
-        Routes.applicationCommands(CLIENT_ID),
+        Routes.applicationCommands(clientId),
         { body: commands }
       );
+      console.log('✅ تم نشر وتحديث الأوامر بنجاح عالمياً (Global Commands)');
     }
-
-    console.log('✅ FeedPulse application (/) commands registered successfully!');
   } catch (error) {
-    console.error('❌ Failed to register commands:', error);
-    process.exit(1);
+    console.error('❌ حدث خطأ أثناء نشر الأوامر:', error);
   }
-}
-
-deploy();
+})();
