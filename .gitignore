@@ -1,13 +1,27 @@
-node_modules/
+# Secrets
 .env
-.DS_Store
+
+# Python runtime
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Databases & logs (runtime artifacts)
+*.db
+*.sqlite3
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.npm
-.nyc_output
-dist/
-build/
-coverage/
+
+# Build / cache / output data
 .cache/
+out/
+debug_out/
+final_out/
+ElectronLoc/
+
+# Test data folders
+chapter1/
+
+# Editor
+.vscode/
+.idea/

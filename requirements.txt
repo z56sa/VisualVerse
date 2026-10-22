@@ -1,0 +1,25 @@
+# Core & CLI
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+tqdm>=4.66.0
+natsort>=8.4.0
+requests>=2.31.0
+
+# Image & Computer Vision
+pillow>=10.0.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# Arabic text reshaping and Bidi (RTL)
+arabic-reshaper>=3.0.0
+python-bidi>=0.4.2
+
+# LLM & Vision API (Google Gemini)
+google-generativeai>=0.8.0
+
+# Optional ONNX Runtime for local detectors (CPU by default, GPU if available)
+onnxruntime>=1.16.0
+
+# Unreal Engine .locres binary support (ELECTRON engine patches)
+pylocres>=0.1.0
+binsl>=0.1.0
